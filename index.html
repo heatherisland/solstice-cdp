@@ -1,3 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="A self-directed capstone for the Hightouch Solutions Partner certification: build a composable CDP end to end with Snowflake, dbt and Hightouch for a fictional DTC skincare brand.">
+<meta name="author" content="Heather Barry">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Hightouch Capstone Walkthrough">
+<meta property="og:description" content="A self-directed capstone for the Hightouch Solutions Partner certification: build a composable CDP end to end with Snowflake, dbt and Hightouch for a fictional DTC skincare brand.">
+<meta property="og:url" content="https://heatherisland.github.io/solstice-cdp/">
+<meta name="twitter:card" content="summary">
+<link rel="canonical" href="https://heatherisland.github.io/solstice-cdp/">
+<style>
+  html { color-scheme: light dark; }
+  body { margin: 0; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+</style>
 <title>Hightouch Capstone Walkthrough</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -280,7 +299,8 @@
     * { transition: none !important; animation: none !important; }
   }
 </style>
-
+</head>
+<body>
 <div class="wrap">
   <header class="masthead">
     <div>
@@ -1096,6 +1116,53 @@ const PHASES = [
   }
 ];
 
+/* ---------------------------------------------------------------- ids
+   Checkbox ids are derived from the step's own text, not its position, so
+   inserting or reordering steps never re-points an existing tick. */
+function h(s) {
+  let x = 5381;
+  for (let i = 0; i < s.length; i++) x = ((x << 5) + x + s.charCodeAt(i)) >>> 0;
+  return x.toString(36);
+}
+const cidOf = (ph, it) => ph.id + "-" + h(it.t);
+
+/* One-time migration off the original positional ids. Phases 1-10 kept their
+   order, so old index maps straight to that item. Phase 0 was expanded, so its
+   old steps map explicitly onto the steps that replaced them. */
+const OLD_P0 = {
+  0: ["Fill the trial form at signup.snowflake.com",
+      "Choose Enterprise, AWS, and a US region",
+      "Verify your email and set your username and password",
+      "Enrol in MFA when prompted"],
+  1: ["Create the warehouse, database, schemas, role and service user"],
+  2: ["Grant the Lightning sync engine its two schemas"],
+  3: ["Generate an RSA key pair and attach the public key"],
+  5: ["SOLSTICE exists with RAW, ANALYTICS, HIGHTOUCH_AUDIT, HIGHTOUCH_PLANNER"],
+  6: ["SOLSTICE_HT_SVC can USE ROLE SOLSTICE_HIGHTOUCH and USE WAREHOUSE SOLSTICE_WH"],
+  7: ["snow connection test passes with the key — no password anywhere"],
+  8: ["Account identifier recorded above in Workspace values"]
+};
+
+function migrateChecks() {
+  let changed = false;
+  Object.keys(state.checks).forEach(k => {
+    const m = /^(p\d+b?)-(\d+)$/.exec(k);
+    if (!m) return;
+    const pid = m[1], idx = +m[2];
+    delete state.checks[k];
+    changed = true;
+    const ph = PHASES.find(p => p.id === pid);
+    if (!ph) return;
+    if (pid === "p0") {
+      (OLD_P0[idx] || []).forEach(t => { state.checks[pid + "-" + h(t)] = true; });
+    } else {
+      const it = ph.items[idx];
+      if (it && it.t) state.checks[pid + "-" + h(it.t)] = true;
+    }
+  });
+  return changed;
+}
+
 /* ---------------------------------------------------------------- state */
 const state = { checks: {}, env: {}, pred: {}, notes: {}, opts: {} };
 let db = null, usingLocal = false;
@@ -1184,7 +1251,7 @@ function render() {
       if (it.k === "verify" && !inVerify) { h += '<div class="subhead">Done when</div>'; inVerify = true; }
       if (it.k === "step" || it.k === "verify") {
         stepN++;
-        const cid = ph.id + "-" + i;
+        const cid = cidOf(ph, it);
         h += '<div class="check"><input type="checkbox" id="chk-' + cid + '" data-check="' + cid + '">' +
           '<span class="ct"><label for="chk-' + cid + '">' + S(it.t) + "</label>" +
           (it.d ? "<em>" + S(it.d) + "</em>" : "") + "</span></div>";
@@ -1195,7 +1262,7 @@ function render() {
         h += tableBlock(it.head, it.rows);
       } else if (it.k === "predict") {
         stepN++;
-        const cid = ph.id + "-" + i;
+        const cid = cidOf(ph, it);
         h += '<div class="check"><input type="checkbox" id="chk-' + cid + '" data-check="' + cid + '">' +
           '<span class="ct"><label for="chk-' + cid + '">' + S(it.t) + "</label></span></div>" + predictBlock(ph.id);
       }
@@ -1317,6 +1384,7 @@ function wire() {
 
 /* ---------------------------------------------------------------- boot */
 readLocal();
+if (migrateChecks()) writeLocal();
 render();
 applyState();
 wire();
@@ -1339,10 +1407,19 @@ setSave(false, "Saved in this browser");
         if (v && typeof v === "object") { state[kinds[i]] = v; any = true; }
       }
     });
-    if (any) { applyState(); writeLocal(); }
+    if (any) {
+      // Ticks saved under the original positional ids get remapped, then
+      // written straight back so the migration survives the next load.
+      if (migrateChecks()) { await db.doc("state/checks").set({ v: state.checks }); }
+      applyState();
+      writeLocal();
+    }
     setSave(true, "Synced");
   } catch (e) {
     setSave(false, "Saved in this browser");
   }
 })();
 </script>
+
+</body>
+</html>
