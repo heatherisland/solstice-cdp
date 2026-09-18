@@ -1,4 +1,4 @@
--- Phase 0 — warehouse, database, role, service user, Lightning schemas
+-- Phase 0 - warehouse, database, role, service user, Lightning schemas
 -- Part of the Solstice CDP capstone build. Fictional brand, synthetic data.
 
 USE ROLE ACCOUNTADMIN;
@@ -17,7 +17,8 @@ CREATE ROLE SOLSTICE_HIGHTOUCH;
 CREATE USER SOLSTICE_HT_SVC
   DEFAULT_ROLE = SOLSTICE_HIGHTOUCH
   DEFAULT_WAREHOUSE = SOLSTICE_WH
-  TYPE = SERVICE;
+  DEFAULT_NAMESPACE = SOLSTICE   -- without this, a blank Database field in a
+  TYPE = SERVICE;                -- destination's config becomes a failed sync
 GRANT ROLE SOLSTICE_HIGHTOUCH TO USER SOLSTICE_HT_SVC;
 
 GRANT USAGE ON WAREHOUSE SOLSTICE_WH TO ROLE SOLSTICE_HIGHTOUCH;

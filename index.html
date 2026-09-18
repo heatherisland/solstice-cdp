@@ -409,7 +409,8 @@ CREATE ROLE SOLSTICE_HIGHTOUCH;
 CREATE USER SOLSTICE_HT_SVC
   DEFAULT_ROLE = SOLSTICE_HIGHTOUCH
   DEFAULT_WAREHOUSE = SOLSTICE_WH
-  TYPE = SERVICE;
+  DEFAULT_NAMESPACE = SOLSTICE   -- without this, a blank Database field in a
+  TYPE = SERVICE;                -- destination's config becomes a failed sync
 GRANT ROLE SOLSTICE_HIGHTOUCH TO USER SOLSTICE_HT_SVC;
 
 GRANT USAGE ON WAREHOUSE SOLSTICE_WH TO ROLE SOLSTICE_HIGHTOUCH;
@@ -969,6 +970,7 @@ const PHASES = [
     items: [
       { k: "step", id: "j0jc5m", t: "Add the Snowflake source", d: "Name it SOLSTICE_SNOWFLAKE. A failed connection here is almost always the role default or a mangled key file, not the network." },
       { k: "step", id: "cgmiys", t: "Enable the Lightning sync engine", d: "Run a sync in Phase 4, then go look at what Hightouch wrote into HIGHTOUCH_AUDIT and HIGHTOUCH_PLANNER. Being able to describe that mechanism is the answer to the security question every enterprise data team asks." },
+      { k: "note", t: "Fill in every field on the source form, Database included. Leave it blank and the Lightning check fails with \"this session does not have a current database\" — the connection is fine, there is just no database for CREATE TABLE to resolve against. Hightouch offers a SQL snippet to fix it: do not run it. It creates a HIGHTOUCH_ROLE and grants it to a hightouch_user that does not exist in your account, and would move ownership of the planner schema away from the role you set up in Phase 0. The fix is the Database field, not more SQL." },
       { k: "step", id: "pxox1n", t: "Connect the dbt models extension", d: "Tag marts models so staging and intermediate stay out of the picker. Hightouch runs dbt compile for preview and queries the materialized table at run time — a model that only exists in the repo will compile then fail.", code: { lang: "yaml", src: YAML_DBTPROJ } },
       { k: "step", id: "1qzc77q", t: "Register three models", code: null },
       { k: "table", head: ["Model","Source","Primary key","Role"], rows: [["Solstice Customer 360","customer_360","person_id","Parent model"],["Solstice Orders","fct_orders","order_id","Related — purchases"],["Solstice Web Events","fct_web_events","event_id","Event — behavior"]] },
