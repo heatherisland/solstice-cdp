@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 # Phase 0 - RSA key pair for the Hightouch service user.
-# Snowflake service users cannot authenticate with a password, so this is the
-# only way in. Run it once; Phase 2 generates a second pair for dbt.
 set -euo pipefail
 
 # Generate outside the repo. A private key in a folder you will later make

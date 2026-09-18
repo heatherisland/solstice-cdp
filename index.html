@@ -437,14 +437,25 @@ ALTER WAREHOUSE SOLSTICE_WH SET RESOURCE_MONITOR = SOLSTICE_GUARD;`;
 const BASH_CLI = `# Snowflake CLI is the current client; SnowSQL still works if you have it.
 pip install snowflake-cli
 
+# Replace the account with your own identifier first -- Snowsight's account
+# selector, View account details, or read it off the URL you are logged into:
+# app.snowflake.com/<org>/<account>/ becomes <org>-<account>.
+#
+# --authenticator SNOWFLAKE_JWT is required. Without it the CLI ignores the key
+# and asks for a password the service user does not have.
 snow connection add \\
   --connection-name solstice \\
   --account ORGNAME-ACCOUNTNAME \\
   --user SOLSTICE_HT_SVC \\
+  --authenticator SNOWFLAKE_JWT \\
   --private-key-file ~/.ssh/solstice_ht_key.p8 \\
   --warehouse SOLSTICE_WH \\
   --database SOLSTICE \\
   --role SOLSTICE_HIGHTOUCH
+
+# It then prompts for password, schema, host, port and more. Press Enter through
+# EVERY one of them. There is no password on a TYPE = SERVICE user: typing one
+# writes a plaintext secret into config.toml and still will not authenticate.
 
 snow connection test --connection solstice`;
 
@@ -894,27 +905,27 @@ const PHASES = [
     goal: "A Snowflake trial signed up, an empty SOLSTICE database, and a key-pair service account Hightouch can connect to — proven from a CLI before Hightouch ever sees it.",
     items: [
       { k: "note", t: "Install an authenticator app before you start. Snowflake is in the final phase of removing single-factor password sign-in, so every human user now needs a second factor — and you'll hit that prompt partway through signup, which is a bad moment to go hunting for your phone." },
-      { k: "step", t: "Fill the trial form at signup.snowflake.com", d: "Name, email, company, role. No payment details and no qualifying information — a working email address is the whole requirement. The trial is 30 days and $400 in credits, which is far more than this build burns." },
-      { k: "step", t: "Choose Enterprise, AWS, and a US region", d: "Edition, cloud and region are fixed for the life of the account — changing your mind means a new trial. Enterprise because a few things you may want aren't in Standard, and since the credits are free the higher per-credit rate costs you nothing." },
-      { k: "step", t: "Verify your email and set your username and password", d: "The activation link is what actually creates the account. This login is a human user, which is why it needs MFA and why the Hightouch service account later does not." },
-      { k: "step", t: "Enrol in MFA when prompted", d: "Scan the code with your authenticator app and keep the recovery codes somewhere you'll find them. Getting locked out of a trial account is recoverable but tedious." },
-      { k: "step", t: "Copy your account identifier into Workspace values above", d: "Account selector at the bottom left → View account details → it reads ORGNAME-ACCOUNTNAME. dbt, Hightouch and the CLI all want it, so paste it once now rather than hunting for it three separate times." },
-      { k: "step", t: "Open a SQL worksheet", d: "Projects → Worksheets → + → SQL Worksheet. Every SQL block in Phases 0 and 1 runs here. Set the role selector to ACCOUNTADMIN before you run anything." },
-      { k: "step", t: "Start the clock deliberately", d: "Thirty days is the real constraint on this build. Do Phase 0 the same week you intend to do Phases 1 and 2, or you'll spend the trial's second half rebuilding its first half." },
-      { k: "step", t: "Create the warehouse, database, schemas, role and service user", d: "TYPE = SERVICE is load-bearing: service users cannot authenticate with a password at all under the current rules, which is what forces the key pair a few steps down.", code: { lang: "sql", src: SQL_SETUP } },
-      { k: "step", t: "Put a resource monitor on the warehouse", d: "Free credits, so nothing is at stake here — but a runaway sync schedule against a client account is a real invoice, and doing it reflexively on every warehouse you create is the habit worth building.", code: { lang: "sql", src: SQL_MONITOR } },
-      { k: "step", t: "Grant the Lightning sync engine its two schemas", d: "Lightning tracks changes inside your warehouse rather than on Hightouch infrastructure, so it needs write access. Basic is read-only and fine under ~100K rows. Run this after the block above, not before — the ownership transfer depends on those schemas existing.", code: { lang: "sql", src: SQL_LIGHTNING } },
-      { k: "step", t: "Generate the RSA key pair outside the repo", d: "~/.ssh/ keeps it away from anything you might publish. You'll upload this .p8 to Hightouch in Phase 3 and generate a second pair for dbt in Phase 2.", code: { lang: "bash", src: BASH_KEYS } },
-      { k: "step", t: "Attach the public key and check the fingerprint", d: "Compare RSA_PUBLIC_KEY_FP against the base64 the openssl command printed. A subtly wrong key doesn't fail here — it fails later inside Hightouch's connection form, which tells you almost nothing about why.", code: { lang: "sql", src: SQL_ATTACH_KEY } },
-      { k: "step", t: "Install a CLI and prove the key works", d: "Do this before you touch Hightouch. If the key is wrong you want to find out against a tool that gives you a real error message, not against a connection form that just says it failed.", code: { lang: "bash", src: BASH_CLI } },
+      { k: "step", id: "1rwzop9", t: "Fill the trial form at signup.snowflake.com", d: "Name, email, company, role. No payment details and no qualifying information — a working email address is the whole requirement. The trial is 30 days and $400 in credits, which is far more than this build burns." },
+      { k: "step", id: "1qnkpsa", t: "Choose Enterprise, AWS, and a US region", d: "Edition, cloud and region are fixed for the life of the account — changing your mind means a new trial. Enterprise because a few things you may want aren't in Standard, and since the credits are free the higher per-credit rate costs you nothing." },
+      { k: "step", id: "1lmlbr9", t: "Verify your email and set your username and password", d: "The activation link is what actually creates the account. This login is a human user, which is why it needs MFA and why the Hightouch service account later does not." },
+      { k: "step", id: "1azhgy5", t: "Enrol in MFA when prompted", d: "Scan the code with your authenticator app and keep the recovery codes somewhere you'll find them. Getting locked out of a trial account is recoverable but tedious." },
+      { k: "step", id: "93jv1h", t: "Copy your account identifier into Workspace values above", d: "Account selector at the bottom left → View account details → it reads ORGNAME-ACCOUNTNAME. dbt, Hightouch and the CLI all want it, so paste it once now rather than hunting for it three separate times." },
+      { k: "step", id: "3bjntw", t: "Open a SQL worksheet", d: "Projects → Worksheets → + → SQL Worksheet. Every SQL block in Phases 0 and 1 runs here. Set the role selector to ACCOUNTADMIN before you run anything." },
+      { k: "step", id: "1e6hcqe", t: "Start the clock deliberately", d: "Thirty days is the real constraint on this build. Do Phase 0 the same week you intend to do Phases 1 and 2, or you'll spend the trial's second half rebuilding its first half." },
+      { k: "step", id: "1m60y3j", t: "Create the warehouse, database, schemas, role and service user", d: "TYPE = SERVICE is load-bearing: service users cannot authenticate with a password at all under the current rules, which is what forces the key pair a few steps down.", code: { lang: "sql", src: SQL_SETUP } },
+      { k: "step", id: "1qkvcww", t: "Put a resource monitor on the warehouse", d: "Free credits, so nothing is at stake here — but a runaway sync schedule against a client account is a real invoice, and doing it reflexively on every warehouse you create is the habit worth building.", code: { lang: "sql", src: SQL_MONITOR } },
+      { k: "step", id: "kldcav", t: "Grant the Lightning sync engine its two schemas", d: "Lightning tracks changes inside your warehouse rather than on Hightouch infrastructure, so it needs write access. Basic is read-only and fine under ~100K rows. Run this after the block above, not before — the ownership transfer depends on those schemas existing.", code: { lang: "sql", src: SQL_LIGHTNING } },
+      { k: "step", id: "ov0w23", t: "Generate the RSA key pair outside the repo", d: "~/.ssh/ keeps it away from anything you might publish. You'll upload this .p8 to Hightouch in Phase 3 and generate a second pair for dbt in Phase 2.", code: { lang: "bash", src: "# Generate outside the repo. A private key in a folder you will later make\n# public is the kind of mistake that is only funny when it happens to someone else.\nmkdir -p ~/.ssh\n\nopenssl genrsa 2048 \\\n  | openssl pkcs8 -topk8 -inform PEM -out ~/.ssh/solstice_ht_key.p8 -nocrypt\nopenssl rsa -in ~/.ssh/solstice_ht_key.p8 -pubout -out ~/.ssh/solstice_ht_key.pub\nchmod 600 ~/.ssh/solstice_ht_key.p8\n\n# Snowflake wants the key as one unbroken string: no PEM header, footer or\n# newlines. This strips all three and puts the result on the clipboard.\ngrep -v '^-' ~/.ssh/solstice_ht_key.pub | tr -d '\\n' | pbcopy\n# Linux: ... | xclip -selection clipboard\n\n# The fingerprint, to check against Snowflake's RSA_PUBLIC_KEY_FP in the next step.\nopenssl rsa -pubin -in ~/.ssh/solstice_ht_key.pub -outform DER \\\n  | openssl dgst -sha256 -binary | openssl enc -base64" } },
+      { k: "step", id: "16ug1nh", t: "Attach the public key and check the fingerprint", d: "Compare RSA_PUBLIC_KEY_FP against the base64 the openssl command printed. A subtly wrong key doesn't fail here — it fails later inside Hightouch's connection form, which tells you almost nothing about why.", code: { lang: "sql", src: SQL_ATTACH_KEY } },
+      { k: "step", id: "k1vtec", t: "Install a CLI and prove the key works", d: "Do this before you touch Hightouch. If the key is wrong you want to find out against a tool that gives you a real error message, not against a connection form that just says it failed.", code: { lang: "bash", src: "# Snowflake CLI is the current client; SnowSQL still works if you have it.\npip install snowflake-cli\n\n# Replace the account with your own identifier first -- Snowsight's account\n# selector, View account details, or read it off the URL you are logged into:\n# app.snowflake.com/<org>/<account>/ becomes <org>-<account>.\n#\n# --authenticator SNOWFLAKE_JWT is required. Without it the CLI ignores the key\n# and asks for a password the service user does not have.\nsnow connection add \\\n  --connection-name solstice \\\n  --account ORGNAME-ACCOUNTNAME \\\n  --user SOLSTICE_HT_SVC \\\n  --authenticator SNOWFLAKE_JWT \\\n  --private-key-file ~/.ssh/solstice_ht_key.p8 \\\n  --warehouse SOLSTICE_WH \\\n  --database SOLSTICE \\\n  --role SOLSTICE_HIGHTOUCH\n\n# It then prompts for password, schema, host, port and more. Press Enter through\n# EVERY one of them. There is no password on a TYPE = SERVICE user: typing one\n# writes a plaintext secret into config.toml and still will not authenticate.\n\nsnow connection test --connection solstice" } },
       { k: "note", t: "A fresh trial has no network policy, so Hightouch connects without further work. If you later add one — or repeat this against a client account that has one — you allowlist Hightouch's published IP ranges. PrivateLink is the Business-tier alternative." },
-      { k: "verify", t: "MFA enrolled and recovery codes saved somewhere you'll find them" },
-      { k: "verify", t: "Account identifier recorded above in Workspace values" },
-      { k: "verify", t: "SOLSTICE exists with RAW, ANALYTICS, HIGHTOUCH_AUDIT, HIGHTOUCH_PLANNER" },
-      { k: "verify", t: "SOLSTICE_HT_SVC can USE ROLE SOLSTICE_HIGHTOUCH and USE WAREHOUSE SOLSTICE_WH" },
-      { k: "verify", t: "Resource monitor attached to SOLSTICE_WH" },
-      { k: "verify", t: "snow connection test passes with the key — no password anywhere" },
-      { k: "verify", t: "Trial expiry date noted in Workspace values" }
+      { k: "verify", id: "17sl87f", t: "MFA enrolled and recovery codes saved somewhere you'll find them" },
+      { k: "verify", id: "24y3fk", t: "Account identifier recorded above in Workspace values" },
+      { k: "verify", id: "1dwa52g", t: "SOLSTICE exists with RAW, ANALYTICS, HIGHTOUCH_AUDIT, HIGHTOUCH_PLANNER" },
+      { k: "verify", id: "17nda3l", t: "SOLSTICE_HT_SVC can USE ROLE SOLSTICE_HIGHTOUCH and USE WAREHOUSE SOLSTICE_WH" },
+      { k: "verify", id: "1fcmza2", t: "Resource monitor attached to SOLSTICE_WH" },
+      { k: "verify", id: "2hvnzs", t: "snow connection test passes with the key — no password anywhere" },
+      { k: "verify", id: "1chapzk", t: "Trial expiry date noted in Workspace values" }
     ]
   },
   {
@@ -922,23 +933,15 @@ const PHASES = [
     goal: "Seven raw tables that look like a real DTC brand's source data, including the mess. All of it in a worksheet — no Python, no loaders.",
     items: [
       { k: "note", t: "The mess is the point. Clean synthetic data teaches you nothing, because every interesting decision in a composable CDP comes from data that doesn't join cleanly." },
-      { k: "table", head: ["Table", "Rows", "The wrinkle"], rows: [
-        ["CUSTOMERS", "~5,150", "~3% duplicates: same email, different id, dirty casing"],
-        ["PRODUCTS", "40", "A third are subscription-eligible"],
-        ["ORDERS", "14,000", "No stored total — you compute it from line items"],
-        ["ORDER_ITEMS", "~35,000", "1–4 lines per order"],
-        ["WEB_EVENTS", "120,000", "35% anonymous; up to 3 devices per person"],
-        ["EMAIL_ENGAGEMENT", "60,000", "Keyed on email string only, no id"],
-        ["SUBSCRIPTIONS", "~900", "Active, paused and cancelled"]
-      ]},
-      { k: "step", t: "Create PRODUCTS and CUSTOMERS, then insert the duplicates", code: { lang: "sql", src: SQL_SEED_1 } },
-      { k: "step", t: "Create ORDERS and ORDER_ITEMS", d: "The POWER() exponent is the skew dial — raise it for a more concentrated repeat-buyer base.", code: { lang: "sql", src: SQL_SEED_2 } },
-      { k: "step", t: "Create WEB_EVENTS, EMAIL_ENGAGEMENT and SUBSCRIPTIONS", code: { lang: "sql", src: SQL_SEED_3 } },
-      { k: "step", t: "Run the row-count check", code: { lang: "sql", src: SQL_VERIFY } },
-      { k: "verify", t: "All seven tables exist in SOLSTICE.RAW at roughly the right counts" },
-      { k: "verify", t: "dupe emails returns ~150 — if it returns 0, the INSERT … SAMPLE (3) didn't run" },
-      { k: "verify", t: "anon events is roughly 35% of web_events" },
-      { k: "verify", t: "Every order joins to a customer, every line item to an order" }
+      { k: "table", head: ["Table","Rows","The wrinkle"], rows: [["CUSTOMERS","~5,150","~3% duplicates: same email, different id, dirty casing"],["PRODUCTS","40","A third are subscription-eligible"],["ORDERS","14,000","No stored total — you compute it from line items"],["ORDER_ITEMS","~35,000","1–4 lines per order"],["WEB_EVENTS","120,000","35% anonymous; up to 3 devices per person"],["EMAIL_ENGAGEMENT","60,000","Keyed on email string only, no id"],["SUBSCRIPTIONS","~900","Active, paused and cancelled"]] },
+      { k: "step", id: "1wtcew4", t: "Create PRODUCTS and CUSTOMERS, then insert the duplicates", code: { lang: "sql", src: SQL_SEED_1 } },
+      { k: "step", id: "1bh7jnc", t: "Create ORDERS and ORDER_ITEMS", d: "The POWER() exponent is the skew dial — raise it for a more concentrated repeat-buyer base.", code: { lang: "sql", src: SQL_SEED_2 } },
+      { k: "step", id: "a4q5c4", t: "Create WEB_EVENTS, EMAIL_ENGAGEMENT and SUBSCRIPTIONS", code: { lang: "sql", src: SQL_SEED_3 } },
+      { k: "step", id: "159mi87", t: "Run the row-count check", code: { lang: "sql", src: SQL_VERIFY } },
+      { k: "verify", id: "j4wg1i", t: "All seven tables exist in SOLSTICE.RAW at roughly the right counts" },
+      { k: "verify", id: "1iebfsl", t: "dupe emails returns ~150 — if it returns 0, the INSERT … SAMPLE (3) didn't run" },
+      { k: "verify", id: "164td1c", t: "anon events is roughly 35% of web_events" },
+      { k: "verify", id: "58agjl", t: "Every order joins to a customer, every line item to an order" }
     ]
   },
   {
@@ -946,40 +949,36 @@ const PHASES = [
     goal: "A customer_360 table in SOLSTICE.ANALYTICS keyed on a resolved person_id. The phase that decides whether everything downstream is any good.",
     items: [
       { k: "note", t: "Every audience a marketer can build is bounded by what exists in this layer. This is the phase most people skip, and it is the one that separates a partner who can run a deployment from one who can only click through the UI." },
-      { k: "step", t: "Scaffold the dbt project and profile", d: "pip install dbt-snowflake, then dbt init solstice_cdp. Keep dbt and Hightouch on separate Snowflake users — dbt writes, Hightouch reads.", code: { lang: "yaml", src: YAML_PROFILE } },
-      { k: "step", t: "Build the staging layer", d: "One view per raw table doing nothing but renaming, casting and trimming. Resist putting logic here." },
-      { k: "step", t: "Build the identity spine", d: "Two decisions to be able to defend: min(customer_id) as survivor is deterministic and reproducible; taking the most permissive consent flag across merged accounts is a choice you'd argue the other way with legal. Write your reasoning down — that document is what clients pay for.", code: { lang: "sql", src: SQL_SPINE } },
-      { k: "step", t: "Resolve anonymous identity through device", d: "Then coalesce the direct match with the device match in fct_web_events. Count how many events that recovers — it's usually the most persuasive number in the whole build.", code: { lang: "sql", src: SQL_ANON } },
-      { k: "step", t: "Build customer_360", d: "Identity, profile, purchase, subscription, engagement, behavior, derived. net_revenue counts completed orders only — but refunded and cancelled orders still count for recency, because someone who ordered and refunded last week is not lapsed." },
-      { k: "step", t: "Add RFM, lifecycle tier and churn risk", d: "Churn risk relative to each person's own cadence, so a monthly replenishment buyer and an annual gift buyer don't share a threshold.", code: { lang: "sql", src: SQL_TIERS } },
-      { k: "step", t: "Add tests before you connect anything", d: "Hightouch will sync whatever you give it, duplicates included.", code: { lang: "yaml", src: YAML_TESTS } },
-      { k: "verify", t: "dbt build passes with zero test failures" },
-      { k: "verify", t: "customer_360 row count is lower than CUSTOMERS — that gap is your resolved duplicates" },
-      { k: "verify", t: "You can state how many anonymous events got attributed, as a number and a percentage" },
-      { k: "verify", t: "Every lifecycle_tier has a non-trivial population (empty vip = wrong thresholds)" },
-      { k: "verify", t: "Repo pushed to GitHub with *.p8 gitignored" }
+      { k: "step", id: "w4rxbx", t: "Scaffold the dbt project and profile", d: "pip install dbt-snowflake, then dbt init solstice_cdp. Keep dbt and Hightouch on separate Snowflake users — dbt writes, Hightouch reads.", code: { lang: "yaml", src: YAML_PROFILE } },
+      { k: "step", id: "o6wev4", t: "Build the staging layer", d: "One view per raw table doing nothing but renaming, casting and trimming. Resist putting logic here." },
+      { k: "step", id: "ojektb", t: "Build the identity spine", d: "Two decisions to be able to defend: min(customer_id) as survivor is deterministic and reproducible; taking the most permissive consent flag across merged accounts is a choice you'd argue the other way with legal. Write your reasoning down — that document is what clients pay for.", code: { lang: "sql", src: SQL_SPINE } },
+      { k: "step", id: "1ra8s09", t: "Resolve anonymous identity through device", d: "Then coalesce the direct match with the device match in fct_web_events. Count how many events that recovers — it's usually the most persuasive number in the whole build.", code: { lang: "sql", src: SQL_ANON } },
+      { k: "step", id: "xerb5r", t: "Build customer_360", d: "Identity, profile, purchase, subscription, engagement, behavior, derived. net_revenue counts completed orders only — but refunded and cancelled orders still count for recency, because someone who ordered and refunded last week is not lapsed." },
+      { k: "step", id: "1ifywgf", t: "Add RFM, lifecycle tier and churn risk", d: "Churn risk relative to each person's own cadence, so a monthly replenishment buyer and an annual gift buyer don't share a threshold.", code: { lang: "sql", src: SQL_TIERS } },
+      { k: "step", id: "1to0pwd", t: "Add tests before you connect anything", d: "Hightouch will sync whatever you give it, duplicates included.", code: { lang: "yaml", src: YAML_TESTS } },
+      { k: "verify", id: "19l1nw5", t: "dbt build passes with zero test failures" },
+      { k: "verify", id: "1bgf8nz", t: "customer_360 row count is lower than CUSTOMERS — that gap is your resolved duplicates" },
+      { k: "verify", id: "hoed84", t: "You can state how many anonymous events got attributed, as a number and a percentage" },
+      { k: "verify", id: "3a46fb", t: "Every lifecycle_tier has a non-trivial population (empty vip = wrong thresholds)" },
+      { k: "verify", id: "od81aq", t: "Repo pushed to GitHub with *.p8 gitignored" }
     ]
   },
   {
     id: "p3", n: "3", title: "Connect Hightouch", hours: "2",
     goal: "Snowflake source registered, dbt models available inside Hightouch, Git Sync writing workspace config back to the repo.",
     items: [
-      { k: "step", t: "Add the Snowflake source", d: "Name it SOLSTICE_SNOWFLAKE. A failed connection here is almost always the role default or a mangled key file, not the network." },
-      { k: "step", t: "Enable the Lightning sync engine", d: "Run a sync in Phase 4, then go look at what Hightouch wrote into HIGHTOUCH_AUDIT and HIGHTOUCH_PLANNER. Being able to describe that mechanism is the answer to the security question every enterprise data team asks." },
-      { k: "step", t: "Connect the dbt models extension", d: "Tag marts models so staging and intermediate stay out of the picker. Hightouch runs dbt compile for preview and queries the materialized table at run time — a model that only exists in the repo will compile then fail.", code: { lang: "yaml", src: YAML_DBTPROJ } },
-      { k: "step", t: "Register three models", code: null },
-      { k: "table", head: ["Model", "Source", "Primary key", "Role"], rows: [
-        ["Solstice Customer 360", "customer_360", "person_id", "Parent model"],
-        ["Solstice Orders", "fct_orders", "order_id", "Related — purchases"],
-        ["Solstice Web Events", "fct_web_events", "event_id", "Event — behavior"]
-      ]},
+      { k: "step", id: "j0jc5m", t: "Add the Snowflake source", d: "Name it SOLSTICE_SNOWFLAKE. A failed connection here is almost always the role default or a mangled key file, not the network." },
+      { k: "step", id: "cgmiys", t: "Enable the Lightning sync engine", d: "Run a sync in Phase 4, then go look at what Hightouch wrote into HIGHTOUCH_AUDIT and HIGHTOUCH_PLANNER. Being able to describe that mechanism is the answer to the security question every enterprise data team asks." },
+      { k: "step", id: "pxox1n", t: "Connect the dbt models extension", d: "Tag marts models so staging and intermediate stay out of the picker. Hightouch runs dbt compile for preview and queries the materialized table at run time — a model that only exists in the repo will compile then fail.", code: { lang: "yaml", src: YAML_DBTPROJ } },
+      { k: "step", id: "1qzc77q", t: "Register three models", code: null },
+      { k: "table", head: ["Model","Source","Primary key","Role"], rows: [["Solstice Customer 360","customer_360","person_id","Parent model"],["Solstice Orders","fct_orders","order_id","Related — purchases"],["Solstice Web Events","fct_web_events","event_id","Event — behavior"]] },
       { k: "note", t: "The primary key is what bites people. Hightouch uses it to diff rows between runs and decide what changed, so it must be genuinely unique and stable — which is why the unique test goes in before this step, not after." },
-      { k: "step", t: "Enable Git Sync", d: "Bidirectional: UI edits get written out as YAML, YAML changes get applied back. It versions models, syncs and event contracts including Customer Studio schema models — but not Customer Studio audiences or the syncs generated from them. That governance gap is worth being able to describe." },
-      { k: "verify", t: "Source connects and previews a query against ANALYTICS" },
-      { k: "verify", t: "Lightning enabled, audit and planner schemas visible in Snowflake" },
-      { k: "verify", t: "Three models registered, each previewing the expected row count" },
-      { k: "verify", t: "A UI change to a model appears as a YAML diff in the repo" },
-      { k: "verify", t: "You can explain out loud why person_id is the key and what breaks if it isn't unique" }
+      { k: "step", id: "wpzuz1", t: "Enable Git Sync", d: "Bidirectional: UI edits get written out as YAML, YAML changes get applied back. It versions models, syncs and event contracts including Customer Studio schema models — but not Customer Studio audiences or the syncs generated from them. That governance gap is worth being able to describe." },
+      { k: "verify", id: "h2gba9", t: "Source connects and previews a query against ANALYTICS" },
+      { k: "verify", id: "1p4oe99", t: "Lightning enabled, audit and planner schemas visible in Snowflake" },
+      { k: "verify", id: "446d8g", t: "Three models registered, each previewing the expected row count" },
+      { k: "verify", id: "23u0fu", t: "A UI change to a model appears as a YAML diff in the repo" },
+      { k: "verify", id: "1beb67t", t: "You can explain out loud why person_id is the key and what breaks if it isn't unique" }
     ]
   },
   {
@@ -987,23 +986,18 @@ const PHASES = [
     goal: "Two working syncs off customer_360 — one to a real ESP, one to an endpoint you built that enforces Braze's contract.",
     items: [
       { k: "note", t: "Do these before Customer Studio. Audiences are syncs with a nicer front end; if you can't debug a plain sync you can't debug an audience sync either." },
-      { k: "step", t: "Sync 1 — Klaviyo profiles", d: "Free tier covers 250 profiles. Map email as identifier, push first_name, last_name, state, skin_type, lifecycle_tier, churn_risk, net_revenue, days_since_last_order, top_category.", code: { lang: "sql", src: SQL_KLAVIYO_FILTER } },
-      { k: "step", t: "Read the row-level results and fix a failure at the model layer", d: "Some rows will fail. That's expected and it's the useful part. This loop is where you'll spend most of your real Hightouch time." },
+      { k: "step", id: "qoefpm", t: "Sync 1 — Klaviyo profiles", d: "Free tier covers 250 profiles. Map email as identifier, push first_name, last_name, state, skin_type, lifecycle_tier, churn_risk, net_revenue, days_since_last_order, top_category.", code: { lang: "sql", src: SQL_KLAVIYO_FILTER } },
+      { k: "step", id: "1xj1qs8", t: "Read the row-level results and fix a failure at the model layer", d: "Some rows will fail. That's expected and it's the useful part. This loop is where you'll spend most of your real Hightouch time." },
       { k: "note", t: "Braze's /users/track takes POST with a bearer REST key. The body carries attributes, events and purchases; each object needs at least one identifier, with external_id, user_alias or braze_id taking precedence over email and phone. Current accounts cap a request at 75 objects total. \"_update_existing_only\": false is what lets a call create a profile rather than only update one." },
-      { k: "step", t: "Sync 2 — build the Braze-shaped payload", code: { lang: "json", src: JSON_BRAZE } },
-      { k: "step", t: "Stand up the receiver: API Gateway in front of a Lambda", d: "Reject anything that violates the contract — a destination that accepts everything teaches you nothing.", code: { lang: "python", src: PY_LAMBDA } },
-      { k: "step", t: "Wire the HTTP Request destination, batch size 75", d: "Then deliberately set it to 100 and watch your own endpoint return 429. Reading a rate-limit failure in the sync logs and tracing it back to a batch-size setting is most of what destination troubleshooting actually is." },
-      { k: "table", head: ["Setting", "Choose", "Why"], rows: [
-        ["Sync mode", "Upsert", "Insert-only misses attribute changes; update-only drops new customers"],
-        ["Schedule", "Interval, hourly", "Enough to see behavior without burning credits"],
-        ["Batch size", "75", "The destination's documented limit, not a round number"],
-        ["Alerting", "Failure + row-error threshold", "Silent partial failures are the dangerous kind"]
-      ]},
-      { k: "verify", t: "Klaviyo shows profiles with lifecycle_tier and churn_risk as custom properties" },
-      { k: "verify", t: "Your Lambda has written payloads to S3 that you've opened and read" },
-      { k: "verify", t: "You've deliberately caused a 429 and found it in the sync logs" },
-      { k: "verify", t: "You've deliberately caused a 400 by unmapping the identifier, and fixed it" },
-      { k: "verify", t: "You can explain the difference between a failed sync and one that succeeded with rejected rows" }
+      { k: "step", id: "1s6dtx5", t: "Sync 2 — build the Braze-shaped payload", code: { lang: "json", src: JSON_BRAZE } },
+      { k: "step", id: "r3jkon", t: "Stand up the receiver: API Gateway in front of a Lambda", d: "Reject anything that violates the contract — a destination that accepts everything teaches you nothing.", code: { lang: "python", src: PY_LAMBDA } },
+      { k: "step", id: "1pnjsgt", t: "Wire the HTTP Request destination, batch size 75", d: "Then deliberately set it to 100 and watch your own endpoint return 429. Reading a rate-limit failure in the sync logs and tracing it back to a batch-size setting is most of what destination troubleshooting actually is." },
+      { k: "table", head: ["Setting","Choose","Why"], rows: [["Sync mode","Upsert","Insert-only misses attribute changes; update-only drops new customers"],["Schedule","Interval, hourly","Enough to see behavior without burning credits"],["Batch size","75","The destination's documented limit, not a round number"],["Alerting","Failure + row-error threshold","Silent partial failures are the dangerous kind"]] },
+      { k: "verify", id: "uz5n5u", t: "Klaviyo shows profiles with lifecycle_tier and churn_risk as custom properties" },
+      { k: "verify", id: "35ls4e", t: "Your Lambda has written payloads to S3 that you've opened and read" },
+      { k: "verify", id: "5uib5x", t: "You've deliberately caused a 429 and found it in the sync logs" },
+      { k: "verify", id: "1vtzk2m", t: "You've deliberately caused a 400 by unmapping the identifier, and fixed it" },
+      { k: "verify", id: "13xphrq", t: "You can explain the difference between a failed sync and one that succeeded with rejected rows" }
     ]
   },
   {
@@ -1011,20 +1005,20 @@ const PHASES = [
     goal: "A schema a non-technical marketer could actually use, without asking you what rfm_m means.",
     items: [
       { k: "note", t: "The schema is the contract between the data team and the marketing team. Build it badly and every audience request comes back to you as a ticket — exactly the outcome a composable CDP is sold to prevent." },
-      { k: "step", t: "Create the parent model", d: "customer_360, primary key person_id. One row per audience member, stable key, already carrying the columns your planned audiences need." },
-      { k: "step", t: "Add related models", d: "fct_orders and fct_subscriptions on person_id at 1:many. fct_order_items reaches the parent through orders — the pattern for any many-to-many via an intermediate table." },
-      { k: "step", t: "Add event models", d: "fct_web_events and fct_email_events, each with a timestamp column and a join key back to the parent. Without events you can only segment on attributes." },
-      { k: "step", t: "Set cardinality explicitly on every relationship", d: "Confirm join key data types match on both sides. A type mismatch doesn't error — it silently returns zero rows, and you'll lose an hour to it." },
-      { k: "step", t: "Hide every column a marketer will never filter on", d: "Surrogate keys, customer_id, account_count, raw RFM component scores." },
-      { k: "step", t: "Alias the rest into plain language", d: "days_since_last_order → \"Days since last purchase\". net_revenue → \"Lifetime revenue\". top_category → \"Favorite category\"." },
-      { k: "step", t: "Describe anything with a judgment baked into it", d: "\"Lifetime revenue\" needs a description saying it excludes refunded and cancelled orders, or someone reconciles it against finance and you get the call." },
-      { k: "step", t: "Enable suggestions on the low-cardinality fields", d: "lifecycle_tier, churn_risk, skin_type, state, acquisition_channel, top_category. Under ~100 distinct values Hightouch offers pick-lists instead of free text, removing a whole class of typo-driven empty audiences." },
-      { k: "step", t: "Set privacy levels on email and phone", d: "Even in a sandbox. The habit is the point." },
-      { k: "verify", t: "Parent + two related + one through-relationship + two event models" },
-      { k: "verify", t: "Every relationship has explicit cardinality and matching key types" },
-      { k: "verify", t: "No raw column names visible to a marketer" },
-      { k: "verify", t: "Three throwaway audiences return plausible counts (all / attribute / event+window)" },
-      { k: "verify", t: "Screenshot of the finished schema saved for Phase 10" }
+      { k: "step", id: "1z0nxud", t: "Create the parent model", d: "customer_360, primary key person_id. One row per audience member, stable key, already carrying the columns your planned audiences need." },
+      { k: "step", id: "1wuwx6b", t: "Add related models", d: "fct_orders and fct_subscriptions on person_id at 1:many. fct_order_items reaches the parent through orders — the pattern for any many-to-many via an intermediate table." },
+      { k: "step", id: "1m9gblg", t: "Add event models", d: "fct_web_events and fct_email_events, each with a timestamp column and a join key back to the parent. Without events you can only segment on attributes." },
+      { k: "step", id: "yekk4m", t: "Set cardinality explicitly on every relationship", d: "Confirm join key data types match on both sides. A type mismatch doesn't error — it silently returns zero rows, and you'll lose an hour to it." },
+      { k: "step", id: "xu8p5b", t: "Hide every column a marketer will never filter on", d: "Surrogate keys, customer_id, account_count, raw RFM component scores." },
+      { k: "step", id: "nbwdmo", t: "Alias the rest into plain language", d: "days_since_last_order → \"Days since last purchase\". net_revenue → \"Lifetime revenue\". top_category → \"Favorite category\"." },
+      { k: "step", id: "4sgecx", t: "Describe anything with a judgment baked into it", d: "\"Lifetime revenue\" needs a description saying it excludes refunded and cancelled orders, or someone reconciles it against finance and you get the call." },
+      { k: "step", id: "15c45xr", t: "Enable suggestions on the low-cardinality fields", d: "lifecycle_tier, churn_risk, skin_type, state, acquisition_channel, top_category. Under ~100 distinct values Hightouch offers pick-lists instead of free text, removing a whole class of typo-driven empty audiences." },
+      { k: "step", id: "tyss0c", t: "Set privacy levels on email and phone", d: "Even in a sandbox. The habit is the point." },
+      { k: "verify", id: "hcpekt", t: "Parent + two related + one through-relationship + two event models" },
+      { k: "verify", id: "fptxhs", t: "Every relationship has explicit cardinality and matching key types" },
+      { k: "verify", id: "f8usbf", t: "No raw column names visible to a marketer" },
+      { k: "verify", id: "9877yq", t: "Three throwaway audiences return plausible counts (all / attribute / event+window)" },
+      { k: "verify", id: "wvaylc", t: "Screenshot of the finished schema saved for Phase 10" }
     ]
   },
   {
@@ -1032,25 +1026,18 @@ const PHASES = [
     goal: "Six traits and five audiences, each verified against SQL you wrote yourself.",
     items: [
       { k: "note", t: "Predict before you look. For every audience, write down the count you expect and the SQL you think it compiles to before you open the preview. The gap is where the learning is." },
-      { k: "table", head: ["Trait", "Method", "Why this one"], rows: [
-        ["Orders last 90 days", "Count", "The workhorse; count over a window"],
-        ["Spend last 180 days", "Aggregation (sum)", "Aggregation across a through-relationship"],
-        ["Last category purchased", "Occurrence (last)", "Occurrence traits drive personalization"],
-        ["Categories browsed", "List", "List traits, and their cardinality trap"],
-        ["Replenishment due", "SQL formula", "Formula over existing fields"],
-        ["Discount dependence", "SQL aggregation", "Custom logic the UI can't express"]
-      ]},
-      { k: "step", t: "Build one trait of each calculation method", d: "Hightouch offers seven: aggregation, count, occurrence, list, SQL aggregation, SQL formula, audience membership. Build them so you know them by feel." },
+      { k: "table", head: ["Trait","Method","Why this one"], rows: [["Orders last 90 days","Count","The workhorse; count over a window"],["Spend last 180 days","Aggregation (sum)","Aggregation across a through-relationship"],["Last category purchased","Occurrence (last)","Occurrence traits drive personalization"],["Categories browsed","List","List traits, and their cardinality trap"],["Replenishment due","SQL formula","Formula over existing fields"],["Discount dependence","SQL aggregation","Custom logic the UI can't express"]] },
+      { k: "step", id: "1jhy6xd", t: "Build one trait of each calculation method", d: "Hightouch offers seven: aggregation, count, occurrence, list, SQL aggregation, SQL formula, audience membership. Build them so you know them by feel." },
       { k: "note", t: "Real-time audiences support only aggregation (sum), count and occurrence. Design a lifecycle program around a list trait or a SQL formula and it cannot run in real time — knowing that before you design is the difference between a scoping conversation and a rebuild." },
-      { k: "predict", t: "Build the five audiences — record your prediction before you open the preview" },
-      { k: "step", t: "Read the generated SQL for each and compare it to what you'd have written", d: "Two things to notice and be able to explain: how Hightouch expresses \"has never done X\" as a not exists rather than a left-join-null, and how event time windows get pushed into the subquery rather than filtered after the join." },
-      { k: "step", t: "Add a split to Replenishment due: 80% treatment, 20% holdout", d: "Splits are how a marketing team proves incrementality. \"Can we hold out a control group\" comes up in roughly every lifecycle conversation." },
-      { k: "step", t: "Sync VIP at risk to Klaviyo and Replenishment due to your webhook", d: "Then compare an audience sync's config to the plain model sync from Phase 4. Same machinery, different front end." },
-      { k: "verify", t: "Six traits, each with a description explaining when to use it" },
-      { k: "verify", t: "Five audiences with predicted and actual counts recorded" },
-      { k: "verify", t: "At least one written note on why a prediction was wrong" },
-      { k: "verify", t: "A split with a holdout, running" },
-      { k: "verify", t: "Two audience syncs live, one per destination" }
+      { k: "predict", id: "19jdimh", t: "Build the five audiences — record your prediction before you open the preview" },
+      { k: "step", id: "2r67s0", t: "Read the generated SQL for each and compare it to what you'd have written", d: "Two things to notice and be able to explain: how Hightouch expresses \"has never done X\" as a not exists rather than a left-join-null, and how event time windows get pushed into the subquery rather than filtered after the join." },
+      { k: "step", id: "17dpyh3", t: "Add a split to Replenishment due: 80% treatment, 20% holdout", d: "Splits are how a marketing team proves incrementality. \"Can we hold out a control group\" comes up in roughly every lifecycle conversation." },
+      { k: "step", id: "1hip1pt", t: "Sync VIP at risk to Klaviyo and Replenishment due to your webhook", d: "Then compare an audience sync's config to the plain model sync from Phase 4. Same machinery, different front end." },
+      { k: "verify", id: "1vpph98", t: "Six traits, each with a description explaining when to use it" },
+      { k: "verify", id: "4yknpd", t: "Five audiences with predicted and actual counts recorded" },
+      { k: "verify", id: "1luio6v", t: "At least one written note on why a prediction was wrong" },
+      { k: "verify", id: "1kgcnx7", t: "A split with a holdout, running" },
+      { k: "verify", id: "1ht2ot0", t: "Two audience syncs live, one per destination" }
     ]
   },
   {
@@ -1058,16 +1045,16 @@ const PHASES = [
     goal: "The other half of Customer Studio Use Cases: the same customer_360 pushed to ad platforms instead of an ESP.",
     items: [
       { k: "note", t: "Lifecycle is only half of what that course covers. The other half is paid — custom audiences, suppression, and lookalike seeds. Skip this and you'll still pass the assessment; do it and you can answer the paid-media question that comes up in every agency conversation." },
-      { k: "step", t: "Add a Meta Custom Audiences or Google Ads Customer Match destination", d: "Use a sandbox or test ad account. Neither platform has a free tier that lets you actually spend, and you don't need one — the point is the sync, not the campaign." },
-      { k: "step", t: "Understand what gets sent before you send it", d: "Ad platforms match on hashed identifiers: lowercase, trimmed, SHA-256. Hightouch handles the hashing, but know what it's sending — \"why is my match rate 40%\" is a question you will be asked, and the answer is almost always normalization upstream, not the destination.", code: { lang: "sql", src: SQL_HASH_NORM } },
-      { k: "step", t: "Build the suppression audience and sync it as an exclusion", d: "Active subscribers plus anyone who ordered in the last 30 days. This is the highest-ROI paid use case there is and the easiest to explain: you are not buying impressions against people who already converted." },
-      { k: "step", t: "Build a lookalike seed from your top RFM quintile", d: "rfm_r, rfm_f and rfm_m all ≥ 4. A seed built on revenue rather than on \"anyone who bought\" is the whole argument for warehouse-native audiences." },
-      { k: "step", t: "Record the match rate for each audience", d: "Put the number in the notes below. It's the figure a paid-media lead will ask for first, and having a real one from your own build beats quoting a case study." },
-      { k: "step", t: "Add a cross-channel exclusion so paid and lifecycle don't double-serve", d: "Anyone currently in the winback journey should be excluded from the paid winback audience. Coordinating channels off one definition of the customer is the thing a composable CDP does that a point solution cannot." },
-      { k: "verify", t: "Two paid audiences live: one suppression, one lookalike seed" },
-      { k: "verify", t: "Match rate recorded for each, with a note on what's limiting it" },
-      { k: "verify", t: "A cross-channel exclusion in place, verified by count" },
-      { k: "verify", t: "You can explain hashing and normalization without looking it up" }
+      { k: "step", id: "kj5xy1", t: "Add a Meta Custom Audiences or Google Ads Customer Match destination", d: "Use a sandbox or test ad account. Neither platform has a free tier that lets you actually spend, and you don't need one — the point is the sync, not the campaign." },
+      { k: "step", id: "bgbq5x", t: "Understand what gets sent before you send it", d: "Ad platforms match on hashed identifiers: lowercase, trimmed, SHA-256. Hightouch handles the hashing, but know what it's sending — \"why is my match rate 40%\" is a question you will be asked, and the answer is almost always normalization upstream, not the destination.", code: { lang: "sql", src: SQL_HASH_NORM } },
+      { k: "step", id: "i9i3t5", t: "Build the suppression audience and sync it as an exclusion", d: "Active subscribers plus anyone who ordered in the last 30 days. This is the highest-ROI paid use case there is and the easiest to explain: you are not buying impressions against people who already converted." },
+      { k: "step", id: "198tj3s", t: "Build a lookalike seed from your top RFM quintile", d: "rfm_r, rfm_f and rfm_m all ≥ 4. A seed built on revenue rather than on \"anyone who bought\" is the whole argument for warehouse-native audiences." },
+      { k: "step", id: "rmg9mc", t: "Record the match rate for each audience", d: "Put the number in the notes below. It's the figure a paid-media lead will ask for first, and having a real one from your own build beats quoting a case study." },
+      { k: "step", id: "13g1bmt", t: "Add a cross-channel exclusion so paid and lifecycle don't double-serve", d: "Anyone currently in the winback journey should be excluded from the paid winback audience. Coordinating channels off one definition of the customer is the thing a composable CDP does that a point solution cannot." },
+      { k: "verify", id: "1nuqhrj", t: "Two paid audiences live: one suppression, one lookalike seed" },
+      { k: "verify", id: "1tv57tu", t: "Match rate recorded for each, with a note on what's limiting it" },
+      { k: "verify", id: "bpp2a2", t: "A cross-channel exclusion in place, verified by count" },
+      { k: "verify", id: "9zefgq", t: "You can explain hashing and normalization without looking it up" }
     ]
   },
   {
@@ -1075,17 +1062,17 @@ const PHASES = [
     goal: "Two running lifecycle programs, one simple and one with real branching.",
     items: [
       { k: "note", t: "Tiles: Entry (join an audience or perform an event), Time Delay, Branch, Send to Destination, Hold Until, Exit. The concept that trips everyone up: journey membership is not audience membership. Once someone enters they stay enrolled until they finish or hit an exit condition — even after they no longer qualify. Design the exits first." },
-      { k: "step", t: "Journey 1 — Welcome", d: "Entry on lifecycle_tier = new → send welcome_1 → wait 3 days → branch on opened? → education vs resend → wait 5 days → hold until order placed → exit." },
-      { k: "step", t: "Set all three welcome exits, not just the happy path", d: "Second order placed, unsubscribed, or 30 days elapsed." },
-      { k: "step", t: "Journey 2 — Winback", d: "Entry on Replenishment due with the 20% holdout excluded so you can measure. Branch on net_revenue: high-value lapsed get a personalized replenishment reminder using Last category purchased; everyone else gets a generic offer. Branch again on churn_risk to decide whether a discount is warranted at all." },
-      { k: "step", t: "Set winback exits", d: "Order placed, unsubscribed, entered a different journey, or 45 days elapsed." },
+      { k: "step", id: "175r6aq", t: "Journey 1 — Welcome", d: "Entry on lifecycle_tier = new → send welcome_1 → wait 3 days → branch on opened? → education vs resend → wait 5 days → hold until order placed → exit." },
+      { k: "step", id: "l05uum", t: "Set all three welcome exits, not just the happy path", d: "Second order placed, unsubscribed, or 30 days elapsed." },
+      { k: "step", id: "brcawm", t: "Journey 2 — Winback", d: "Entry on Replenishment due with the 20% holdout excluded so you can measure. Branch on net_revenue: high-value lapsed get a personalized replenishment reminder using Last category purchased; everyone else gets a generic offer. Branch again on churn_risk to decide whether a discount is warranted at all." },
+      { k: "step", id: "7lb2nx", t: "Set winback exits", d: "Order placed, unsubscribed, entered a different journey, or 45 days elapsed." },
       { k: "note", t: "The design question to sit with: should a discount-dependent customer get a discount in this journey? The defensible answer is no, and explaining why in margin terms rather than data terms is what makes a partner worth hiring." },
-      { k: "step", t: "Trace one named person end to end", d: "Entry, each tile, each branch decision, exit. Confirm the payload that reached your Lambda matches the tile that sent it. \"Why did this specific customer get this specific message\" is the most common question a lifecycle client will ever ask you." },
-      { k: "verify", t: "Both journeys running, with members visible at multiple tiles" },
-      { k: "verify", t: "Exit criteria on both — all cases, not just conversion" },
-      { k: "verify", t: "You've traced one named person end to end and can narrate their path" },
-      { k: "verify", t: "The holdout group is genuinely excluded, verified by count" },
-      { k: "verify", t: "A payload in S3 you can match to a specific journey tile" }
+      { k: "step", id: "188xgcj", t: "Trace one named person end to end", d: "Entry, each tile, each branch decision, exit. Confirm the payload that reached your Lambda matches the tile that sent it. \"Why did this specific customer get this specific message\" is the most common question a lifecycle client will ever ask you." },
+      { k: "verify", id: "10a5xzp", t: "Both journeys running, with members visible at multiple tiles" },
+      { k: "verify", id: "js24pt", t: "Exit criteria on both — all cases, not just conversion" },
+      { k: "verify", id: "elwxmp", t: "You've traced one named person end to end and can narrate their path" },
+      { k: "verify", id: "z5bvqi", t: "The holdout group is genuinely excluded, verified by count" },
+      { k: "verify", id: "fgmjql", t: "A payload in S3 you can match to a specific journey tile" }
     ]
   },
   {
@@ -1093,15 +1080,15 @@ const PHASES = [
     goal: "The build reproducible from source rather than from memory. The phase that most distinguishes this from a tutorial.",
     items: [
       { k: "note", t: "Almost nobody in the partner directory does this. Everyone can build in the UI; very few can hand a client a repo that recreates their activation layer in a second workspace." },
-      { k: "step", t: "Get an API key and start by reading", d: "Base URL api.hightouch.com/api/v1, bearer token, 200 requests per 10 seconds per workspace. Only workspace admins mint keys, and keys inherit their creator's permissions — ask for one scoped as narrowly as the work allows.", code: { lang: "bash", src: BASH_API } },
-      { k: "step", t: "Write an export script for every source, model, destination and sync", d: "That export is a deliverable in its own right — it's what you'd run on day one of an engagement inheriting someone else's Hightouch." },
-      { k: "step", t: "Do the round trip", d: "Delete a test sync in the UI, recreate it from the exported JSON via POST /syncs. If it runs identically your export is complete. If it doesn't, you've found a field your export missed — better here than during a migration." },
-      { k: "step", t: "Put one destination and one sync under Terraform", d: "The provider is Speakeasy-generated, not a first-party product. Verify the current registry address and supported resources before committing, and don't build a client's process on it without saying what it is.", code: { lang: "hcl", src: HCL_TF } },
-      { k: "step", t: "Change that sync in the UI and run a plan", d: "Watch the drift appear." },
-      { k: "verify", t: "A hightouch/export/ directory in the repo, populated by a script you wrote" },
-      { k: "verify", t: "One sync deleted and recreated from its exported JSON, running identically" },
-      { k: "verify", t: "At least one resource under Terraform management, with drift demonstrated" },
-      { k: "verify", t: "A short written position on what can and cannot be managed as code in Hightouch today" }
+      { k: "step", id: "i3y4b1", t: "Get an API key and start by reading", d: "Base URL api.hightouch.com/api/v1, bearer token, 200 requests per 10 seconds per workspace. Only workspace admins mint keys, and keys inherit their creator's permissions — ask for one scoped as narrowly as the work allows.", code: { lang: "bash", src: "export HT_KEY=...\ncurl -s https://api.hightouch.com/api/v1/sources \\\n  -H \"Authorization: Bearer $HT_KEY\" | jq '.data[] | {id, name, type}'\n\ncurl -s https://api.hightouch.com/api/v1/syncs \\\n  -H \"Authorization: Bearer $HT_KEY\" | jq '.data[] | {id, slug, model_id, destination_id, schedule}'" } },
+      { k: "step", id: "26820k", t: "Write an export script for every source, model, destination and sync", d: "That export is a deliverable in its own right — it's what you'd run on day one of an engagement inheriting someone else's Hightouch." },
+      { k: "step", id: "11uz2g0", t: "Do the round trip", d: "Delete a test sync in the UI, recreate it from the exported JSON via POST /syncs. If it runs identically your export is complete. If it doesn't, you've found a field your export missed — better here than during a migration." },
+      { k: "step", id: "9ornk4", t: "Put one destination and one sync under Terraform", d: "The provider is Speakeasy-generated, not a first-party product. Verify the current registry address and supported resources before committing, and don't build a client's process on it without saying what it is.", code: { lang: "hcl", src: HCL_TF } },
+      { k: "step", id: "pxi4df", t: "Change that sync in the UI and run a plan", d: "Watch the drift appear." },
+      { k: "verify", id: "b4dg1x", t: "A hightouch/export/ directory in the repo, populated by a script you wrote" },
+      { k: "verify", id: "xk2nwl", t: "One sync deleted and recreated from its exported JSON, running identically" },
+      { k: "verify", id: "493rx1", t: "At least one resource under Terraform management, with drift demonstrated" },
+      { k: "verify", id: "19iiigf", t: "A short written position on what can and cannot be managed as code in Hightouch today" }
     ]
   },
   {
@@ -1109,31 +1096,31 @@ const PHASES = [
     goal: "Know when this breaks before a marketer tells you.",
     items: [
       { k: "note", t: "Clients don't renew because the audiences were elegant. They renew because the syncs kept running and someone noticed the one time they didn't." },
-      { k: "step", t: "Alert on sync failure", d: "Obvious, and the only one most people set up." },
-      { k: "step", t: "Alert on row-error threshold", d: "The one that matters. A sync that succeeds while rejecting 40% of rows reports green, and nobody finds out until a campaign underperforms." },
-      { k: "step", t: "Alert on sync did not run", d: "A sync silently stopping is worse than one failing loudly." },
-      { k: "step", t: "Write sync results back to Snowflake and query them", d: "This is the composable CDP argument made concrete: activation telemetry lands in the same warehouse as customer data, so \"how many VIP-at-risk customers actually reached Klaviyo this month\" is a query rather than a support ticket.", code: { lang: "sql", src: SQL_TELEMETRY } },
-      { k: "step", t: "Connect the dbt observability layer", d: "Prevents the expensive failure: dbt fails overnight, customer_360 goes stale, syncs keep running happily on yesterday's data, and a winback journey emails people who bought this morning." },
-      { k: "step", t: "Write RUNBOOK.md", d: "Five failure modes — auth error, rejected rows, audience count drop, dbt run failure, credit spike. For each: the first three things to check and who to tell." },
-      { k: "verify", t: "Alerts on all syncs including a row-error threshold, tested by causing a real failure" },
-      { k: "verify", t: "Sync results writing to Snowflake, with a query you've run against them" },
-      { k: "verify", t: "dbt observability connected" },
-      { k: "verify", t: "RUNBOOK.md in the repo covering five failure modes" }
+      { k: "step", id: "3a2trz", t: "Alert on sync failure", d: "Obvious, and the only one most people set up." },
+      { k: "step", id: "15w2n2u", t: "Alert on row-error threshold", d: "The one that matters. A sync that succeeds while rejecting 40% of rows reports green, and nobody finds out until a campaign underperforms." },
+      { k: "step", id: "gjwei6", t: "Alert on sync did not run", d: "A sync silently stopping is worse than one failing loudly." },
+      { k: "step", id: "1218pp0", t: "Write sync results back to Snowflake and query them", d: "This is the composable CDP argument made concrete: activation telemetry lands in the same warehouse as customer data, so \"how many VIP-at-risk customers actually reached Klaviyo this month\" is a query rather than a support ticket.", code: { lang: "sql", src: SQL_TELEMETRY } },
+      { k: "step", id: "tt0qp2", t: "Connect the dbt observability layer", d: "Prevents the expensive failure: dbt fails overnight, customer_360 goes stale, syncs keep running happily on yesterday's data, and a winback journey emails people who bought this morning." },
+      { k: "step", id: "s0mxlb", t: "Write RUNBOOK.md", d: "Five failure modes — auth error, rejected rows, audience count drop, dbt run failure, credit spike. For each: the first three things to check and who to tell." },
+      { k: "verify", id: "yo67hz", t: "Alerts on all syncs including a row-error threshold, tested by causing a real failure" },
+      { k: "verify", id: "1cmfm5", t: "Sync results writing to Snowflake, with a query you've run against them" },
+      { k: "verify", id: "az8mhd", t: "dbt observability connected" },
+      { k: "verify", id: "rn3ph5", t: "RUNBOOK.md in the repo covering five failure modes" }
     ]
   },
   {
     id: "p10", n: "10", title: "The portfolio artifact", hours: "2–3",
     goal: "Something that outlasts the sandbox. The trial expires and the sandbox gets cleaned up — the repo and the writeup are the actual deliverable.",
     items: [
-      { k: "step", t: "Publish the repo", d: "dbt project, Lambda, Terraform, exported Hightouch config, runbook, and a README that reads like a solution design: the problem, the schema decisions and why, the identity approach and its limits, the activation architecture, and what you'd do differently at ten million customers." },
-      { k: "step", t: "Write up the three decisions that required judgment", d: "Why the most permissive consent flag survives a merge and when you'd argue the opposite. Why churn risk is relative to each customer's own cadence. Why discount-dependent customers are excluded from the discount branch. Those are consulting arguments, not tool knowledge." },
-      { k: "step", t: "Scrub anything from the Apply workspace", d: "No screenshots showing other clients' sources, destinations or workspace members. Crop carefully, or rebuild the screenshots against your own data." },
-      { k: "step", t: "Record the eight-minute walkthrough", d: "Problem → warehouse model → schema as a marketer sees it → one audience built live → one journey traced for a single customer → the sync telemetry query. Practice the customer trace; it's the most convincing sixty seconds in the whole thing." },
-      { k: "verify", t: "Public repo with a README that stands on its own" },
-      { k: "verify", t: "A written piece on three judgment calls" },
-      { k: "verify", t: "Eight-minute walkthrough recorded" },
-      { k: "verify", t: "Nothing published showing another client's data or the Apply workspace internals" },
-      { k: "verify", t: "Snowflake trial resources dropped, or the account left to expire deliberately" }
+      { k: "step", id: "1k8453n", t: "Publish the repo", d: "dbt project, Lambda, Terraform, exported Hightouch config, runbook, and a README that reads like a solution design: the problem, the schema decisions and why, the identity approach and its limits, the activation architecture, and what you'd do differently at ten million customers." },
+      { k: "step", id: "wasj5r", t: "Write up the three decisions that required judgment", d: "Why the most permissive consent flag survives a merge and when you'd argue the opposite. Why churn risk is relative to each customer's own cadence. Why discount-dependent customers are excluded from the discount branch. Those are consulting arguments, not tool knowledge." },
+      { k: "step", id: "12yqxm8", t: "Scrub anything from the Apply workspace", d: "No screenshots showing other clients' sources, destinations or workspace members. Crop carefully, or rebuild the screenshots against your own data." },
+      { k: "step", id: "89adwl", t: "Record the eight-minute walkthrough", d: "Problem → warehouse model → schema as a marketer sees it → one audience built live → one journey traced for a single customer → the sync telemetry query. Practice the customer trace; it's the most convincing sixty seconds in the whole thing." },
+      { k: "verify", id: "179pgck", t: "Public repo with a README that stands on its own" },
+      { k: "verify", id: "ee9m8r", t: "A written piece on three judgment calls" },
+      { k: "verify", id: "t0ep65", t: "Eight-minute walkthrough recorded" },
+      { k: "verify", id: "1ak45wm", t: "Nothing published showing another client's data or the Apply workspace internals" },
+      { k: "verify", id: "1ryfcm8", t: "Snowflake trial resources dropped, or the account left to expire deliberately" }
     ]
   }
 ];
@@ -1146,7 +1133,11 @@ function h(s) {
   for (let i = 0; i < s.length; i++) x = ((x << 5) + x + s.charCodeAt(i)) >>> 0;
   return x.toString(36);
 }
-const cidOf = (ph, it) => ph.id + "-" + h(it.t);
+/* Every checkable item carries a baked, permanent id. It is never recomputed
+   from the item's position or its wording, so steps can be reordered, reworded
+   or inserted without ever re-pointing a tick that already exists. h() below is
+   only used by the one-time migration off the two earlier schemes. */
+const cidOf = (ph, it) => ph.id + "-" + it.id;
 
 /* One-time migration off the original positional ids. Phases 1-10 kept their
    order, so old index maps straight to that item. Phase 0 was expanded, so its
@@ -1165,10 +1156,31 @@ const OLD_P0 = {
   8: ["Account identifier recorded above in Workspace values"]
 };
 
+/* Ticks were stored under two earlier schemes: positional indexes, then hashes
+   of the step's wording. Both are remapped onto the baked ids here. Anything
+   already on a baked id is left alone, so this is safe to run every load. */
 function migrateChecks() {
+  const valid = new Set();
+  const byHash = {};
+  PHASES.forEach(ph => ph.items.forEach(it => {
+    if (!it.id) return;
+    const cid = ph.id + "-" + it.id;
+    valid.add(cid);
+    byHash[ph.id + "-" + h(it.t)] = cid;
+  }));
+
   let changed = false;
   Object.keys(state.checks).forEach(k => {
-    const m = /^(p\d+b?)-(\d+)$/.exec(k);
+    if (valid.has(k)) return;
+
+    if (byHash[k]) {                       // wording-hash scheme
+      state.checks[byHash[k]] = true;
+      delete state.checks[k];
+      changed = true;
+      return;
+    }
+
+    const m = /^(p\d+b?)-(\d+)$/.exec(k);  // original positional scheme
     if (!m) return;
     const pid = m[1], idx = +m[2];
     delete state.checks[k];
@@ -1176,10 +1188,13 @@ function migrateChecks() {
     const ph = PHASES.find(p => p.id === pid);
     if (!ph) return;
     if (pid === "p0") {
-      (OLD_P0[idx] || []).forEach(t => { state.checks[pid + "-" + h(t)] = true; });
+      (OLD_P0[idx] || []).forEach(t => {
+        const hit = ph.items.find(it => it.t === t);
+        if (hit) state.checks[pid + "-" + hit.id] = true;
+      });
     } else {
       const it = ph.items[idx];
-      if (it && it.t) state.checks[pid + "-" + h(it.t)] = true;
+      if (it && it.id) state.checks[pid + "-" + it.id] = true;
     }
   });
   return changed;
