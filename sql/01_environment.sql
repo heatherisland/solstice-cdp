@@ -32,5 +32,33 @@ GRANT SELECT ON FUTURE VIEWS IN DATABASE SOLSTICE TO ROLE SOLSTICE_HIGHTOUCH;
 -- Lightning sync engine needs write access to two schemas of its own.
 CREATE SCHEMA IF NOT EXISTS SOLSTICE.HIGHTOUCH_AUDIT;
 CREATE SCHEMA IF NOT EXISTS SOLSTICE.HIGHTOUCH_PLANNER;
-GRANT OWNERSHIP ON SCHEMA SOLSTICE.HIGHTOUCH_AUDIT TO ROLE SOLSTICE_HIGHTOUCH;
-GRANT OWNERSHIP ON SCHEMA SOLSTICE.HIGHTOUCH_PLANNER TO ROLE SOLSTICE_HIGHTOUCH;
+
+-- REVOKE CURRENT GRANTS is doing real work here. The GRANT USAGE ON FUTURE
+-- SCHEMAS above attached a USAGE grant to these two the instant they were
+-- created, and Snowflake refuses to transfer ownership while a dependent grant
+-- exists. This clears it in the same statement; ownership supersedes USAGE
+-- anyway, so nothing is lost.
+GRANT OWNERSHIP ON SCHEMA SOLSTICE.HIGHTOUCH_AUDIT
+  TO ROLE SOLSTICE_HIGHTOUCH REVOKE CURRENT GRANTS;
+GRANT OWNERSHIP ON SCHEMA SOLSTICE.HIGHTOUCH_PLANNER
+  TO ROLE SOLSTICE_HIGHTOUCH REVOKE CURRENT GRANTS;
+
+-- Confirm: OWNERSHIP should sit with SOLSTICE_HIGHTOUCH.
+SHOW GRANTS ON SCHEMA SOLSTICE.HIGHTOUCH_AUDIT;
+
+-- ---------------------------------------------------------------------------
+-- Cost guardrail. Free trial credits, so nothing is at stake here. The habit is
+-- the point: a runaway sync schedule against a client account is a real invoice.
+-- ---------------------------------------------------------------------------
+USE ROLE ACCOUNTADMIN;
+
+CREATE RESOURCE MONITOR SOLSTICE_GUARD
+  WITH CREDIT_QUOTA = 50
+  FREQUENCY = MONTHLY
+  START_TIMESTAMP = IMMEDIATELY
+  TRIGGERS
+    ON 75  PERCENT DO NOTIFY
+    ON 100 PERCENT DO SUSPEND
+    ON 110 PERCENT DO SUSPEND_IMMEDIATE;
+
+ALTER WAREHOUSE SOLSTICE_WH SET RESOURCE_MONITOR = SOLSTICE_GUARD;

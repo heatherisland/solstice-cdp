@@ -401,10 +401,48 @@ GRANT SELECT ON FUTURE TABLES IN DATABASE SOLSTICE TO ROLE SOLSTICE_HIGHTOUCH;
 GRANT SELECT ON ALL VIEWS IN DATABASE SOLSTICE TO ROLE SOLSTICE_HIGHTOUCH;
 GRANT SELECT ON FUTURE VIEWS IN DATABASE SOLSTICE TO ROLE SOLSTICE_HIGHTOUCH;`;
 
+const SQL_MONITOR = `USE ROLE ACCOUNTADMIN;
+
+CREATE RESOURCE MONITOR SOLSTICE_GUARD
+  WITH CREDIT_QUOTA = 50
+  FREQUENCY = MONTHLY
+  START_TIMESTAMP = IMMEDIATELY
+  TRIGGERS
+    ON 75  PERCENT DO NOTIFY
+    ON 100 PERCENT DO SUSPEND
+    ON 110 PERCENT DO SUSPEND_IMMEDIATE;
+
+ALTER WAREHOUSE SOLSTICE_WH SET RESOURCE_MONITOR = SOLSTICE_GUARD;`;
+
+const BASH_CLI = `# Snowflake CLI is the current client; SnowSQL still works if you have it.
+pip install snowflake-cli
+
+snow connection add \\
+  --connection-name solstice \\
+  --account ORGNAME-ACCOUNTNAME \\
+  --user SOLSTICE_HT_SVC \\
+  --private-key-file ~/.ssh/solstice_ht_key.p8 \\
+  --warehouse SOLSTICE_WH \\
+  --database SOLSTICE \\
+  --role SOLSTICE_HIGHTOUCH
+
+snow connection test --connection solstice`;
+
 const SQL_LIGHTNING = `CREATE SCHEMA IF NOT EXISTS SOLSTICE.HIGHTOUCH_AUDIT;
 CREATE SCHEMA IF NOT EXISTS SOLSTICE.HIGHTOUCH_PLANNER;
-GRANT OWNERSHIP ON SCHEMA SOLSTICE.HIGHTOUCH_AUDIT TO ROLE SOLSTICE_HIGHTOUCH;
-GRANT OWNERSHIP ON SCHEMA SOLSTICE.HIGHTOUCH_PLANNER TO ROLE SOLSTICE_HIGHTOUCH;`;
+
+-- REVOKE CURRENT GRANTS is doing real work here. The GRANT USAGE ON FUTURE
+-- SCHEMAS above attached a USAGE grant to these two the instant they were
+-- created, and Snowflake refuses to transfer ownership while a dependent grant
+-- exists. This clears it in the same statement; ownership supersedes USAGE
+-- anyway, so nothing is lost.
+GRANT OWNERSHIP ON SCHEMA SOLSTICE.HIGHTOUCH_AUDIT
+  TO ROLE SOLSTICE_HIGHTOUCH REVOKE CURRENT GRANTS;
+GRANT OWNERSHIP ON SCHEMA SOLSTICE.HIGHTOUCH_PLANNER
+  TO ROLE SOLSTICE_HIGHTOUCH REVOKE CURRENT GRANTS;
+
+-- Confirm: OWNERSHIP should sit with SOLSTICE_HIGHTOUCH.
+SHOW GRANTS ON SCHEMA SOLSTICE.HIGHTOUCH_AUDIT;`;
 
 const BASH_KEYS = `openssl genrsa 2048 | openssl pkcs8 -topk8 -inform PEM -out solstice_ht_key.p8 -nocrypt
 openssl rsa -in solstice_ht_key.p8 -pubout -out solstice_ht_key.pub
@@ -811,18 +849,30 @@ const COURSE = {
 
 const PHASES = [
   {
-    id: "p0", n: "0", title: "Environment", hours: "1–2",
-    goal: "A Snowflake trial with an empty SOLSTICE database and a key-pair service account Hightouch can connect to.",
+    id: "p0", n: "0", title: "Environment", hours: "1.5–2",
+    goal: "A Snowflake trial signed up, an empty SOLSTICE database, and a key-pair service account Hightouch can connect to — proven from a CLI before Hightouch ever sees it.",
     items: [
-      { k: "step", t: "Sign up for a Snowflake trial", d: "Enterprise edition, AWS, US region. 30 days and $400 in credits — far more than this burns. Start the clock the same week you plan to do Phases 1 and 2." },
-      { k: "step", t: "Create the warehouse, database, schemas, role and service user", code: { lang: "sql", src: SQL_SETUP } },
-      { k: "step", t: "Grant the Lightning sync engine its two schemas", d: "Lightning tracks changes inside your warehouse rather than on Hightouch infrastructure, so it needs write access. Basic is read-only and fine under ~100K rows.", code: { lang: "sql", src: SQL_LIGHTNING } },
-      { k: "step", t: "Generate an RSA key pair and attach the public key", d: "Snowflake is deprecating password auth for service users. Add *.p8 to .gitignore before you write a single model.", code: { lang: "bash", src: BASH_KEYS } },
+      { k: "note", t: "Install an authenticator app before you start. Snowflake is in the final phase of removing single-factor password sign-in, so every human user now needs a second factor — and you'll hit that prompt partway through signup, which is a bad moment to go hunting for your phone." },
+      { k: "step", t: "Fill the trial form at signup.snowflake.com", d: "Name, email, company, role. No payment details and no qualifying information — a working email address is the whole requirement. The trial is 30 days and $400 in credits, which is far more than this build burns." },
+      { k: "step", t: "Choose Enterprise, AWS, and a US region", d: "Edition, cloud and region are fixed for the life of the account — changing your mind means a new trial. Enterprise because a few things you may want aren't in Standard, and since the credits are free the higher per-credit rate costs you nothing." },
+      { k: "step", t: "Verify your email and set your username and password", d: "The activation link is what actually creates the account. This login is a human user, which is why it needs MFA and why the Hightouch service account later does not." },
+      { k: "step", t: "Enrol in MFA when prompted", d: "Scan the code with your authenticator app and keep the recovery codes somewhere you'll find them. Getting locked out of a trial account is recoverable but tedious." },
+      { k: "step", t: "Copy your account identifier into Workspace values above", d: "Account selector at the bottom left → View account details → it reads ORGNAME-ACCOUNTNAME. dbt, Hightouch and the CLI all want it, so paste it once now rather than hunting for it three separate times." },
+      { k: "step", t: "Open a SQL worksheet", d: "Projects → Worksheets → + → SQL Worksheet. Every SQL block in Phases 0 and 1 runs here. Set the role selector to ACCOUNTADMIN before you run anything." },
+      { k: "step", t: "Start the clock deliberately", d: "Thirty days is the real constraint on this build. Do Phase 0 the same week you intend to do Phases 1 and 2, or you'll spend the trial's second half rebuilding its first half." },
+      { k: "step", t: "Create the warehouse, database, schemas, role and service user", d: "TYPE = SERVICE is load-bearing: service users cannot authenticate with a password at all under the current rules, which is what forces the key pair a few steps down.", code: { lang: "sql", src: SQL_SETUP } },
+      { k: "step", t: "Put a resource monitor on the warehouse", d: "Free credits, so nothing is at stake here — but a runaway sync schedule against a client account is a real invoice, and doing it reflexively on every warehouse you create is the habit worth building.", code: { lang: "sql", src: SQL_MONITOR } },
+      { k: "step", t: "Grant the Lightning sync engine its two schemas", d: "Lightning tracks changes inside your warehouse rather than on Hightouch infrastructure, so it needs write access. Basic is read-only and fine under ~100K rows. Run this after the block above, not before — the ownership transfer depends on those schemas existing.", code: { lang: "sql", src: SQL_LIGHTNING } },
+      { k: "step", t: "Generate an RSA key pair and attach the public key", d: "Move the .p8 somewhere stable like ~/.ssh/ — you'll upload it to Hightouch in Phase 3 and point dbt at a second one in Phase 2. Add *.p8 to .gitignore before you write a single model.", code: { lang: "bash", src: BASH_KEYS } },
+      { k: "step", t: "Install a CLI and prove the key works", d: "Do this before you touch Hightouch. If the key is wrong you want to find out against a tool that gives you a real error message, not against a connection form that just says it failed.", code: { lang: "bash", src: BASH_CLI } },
       { k: "note", t: "A fresh trial has no network policy, so Hightouch connects without further work. If you later add one — or repeat this against a client account that has one — you allowlist Hightouch's published IP ranges. PrivateLink is the Business-tier alternative." },
+      { k: "verify", t: "MFA enrolled and recovery codes saved somewhere you'll find them" },
+      { k: "verify", t: "Account identifier recorded above in Workspace values" },
       { k: "verify", t: "SOLSTICE exists with RAW, ANALYTICS, HIGHTOUCH_AUDIT, HIGHTOUCH_PLANNER" },
       { k: "verify", t: "SOLSTICE_HT_SVC can USE ROLE SOLSTICE_HIGHTOUCH and USE WAREHOUSE SOLSTICE_WH" },
-      { k: "verify", t: "Key-pair auth connects from snowsql" },
-      { k: "verify", t: "Account identifier recorded above in Workspace values" }
+      { k: "verify", t: "Resource monitor attached to SOLSTICE_WH" },
+      { k: "verify", t: "snow connection test passes with the key — no password anywhere" },
+      { k: "verify", t: "Trial expiry date noted in Workspace values" }
     ]
   },
   {
