@@ -464,11 +464,32 @@ GRANT OWNERSHIP ON SCHEMA SOLSTICE.HIGHTOUCH_PLANNER
 -- Confirm: OWNERSHIP should sit with SOLSTICE_HIGHTOUCH.
 SHOW GRANTS ON SCHEMA SOLSTICE.HIGHTOUCH_AUDIT;`;
 
-const BASH_KEYS = `openssl genrsa 2048 | openssl pkcs8 -topk8 -inform PEM -out solstice_ht_key.p8 -nocrypt
-openssl rsa -in solstice_ht_key.p8 -pubout -out solstice_ht_key.pub
+const BASH_KEYS = `# Generate outside the repo. A private key in a folder you will later make
+# public is the kind of mistake that is only funny when it happens to someone else.
+mkdir -p ~/.ssh
 
-# strip header, footer and newlines from the .pub, then in Snowflake:
-# ALTER USER SOLSTICE_HT_SVC SET RSA_PUBLIC_KEY = 'MIIBIjANBgkq...';`;
+openssl genrsa 2048 \\
+  | openssl pkcs8 -topk8 -inform PEM -out ~/.ssh/solstice_ht_key.p8 -nocrypt
+openssl rsa -in ~/.ssh/solstice_ht_key.p8 -pubout -out ~/.ssh/solstice_ht_key.pub
+chmod 600 ~/.ssh/solstice_ht_key.p8
+
+# Snowflake wants the key as one unbroken string: no PEM header, footer or
+# newlines. This strips all three and puts the result on the clipboard.
+grep -v '^-' ~/.ssh/solstice_ht_key.pub | tr -d '\\n' | pbcopy
+# Linux: ... | xclip -selection clipboard
+
+# The fingerprint, to check against Snowflake's RSA_PUBLIC_KEY_FP in the next step.
+openssl rsa -pubin -in ~/.ssh/solstice_ht_key.pub -outform DER \\
+  | openssl dgst -sha256 -binary | openssl enc -base64`;
+
+const SQL_ATTACH_KEY = `USE ROLE ACCOUNTADMIN;
+
+ALTER USER SOLSTICE_HT_SVC SET RSA_PUBLIC_KEY = 'PASTE_HERE';
+
+-- Find RSA_PUBLIC_KEY_FP in the output. It reads SHA256: followed by exactly
+-- the base64 string the openssl command above printed. If they differ, the
+-- paste picked up a newline -- redo it rather than moving on.
+DESC USER SOLSTICE_HT_SVC;`;
 
 const SQL_SEED_1 = `USE ROLE ACCOUNTADMIN;
 USE WAREHOUSE SOLSTICE_WH;
@@ -883,7 +904,8 @@ const PHASES = [
       { k: "step", t: "Create the warehouse, database, schemas, role and service user", d: "TYPE = SERVICE is load-bearing: service users cannot authenticate with a password at all under the current rules, which is what forces the key pair a few steps down.", code: { lang: "sql", src: SQL_SETUP } },
       { k: "step", t: "Put a resource monitor on the warehouse", d: "Free credits, so nothing is at stake here — but a runaway sync schedule against a client account is a real invoice, and doing it reflexively on every warehouse you create is the habit worth building.", code: { lang: "sql", src: SQL_MONITOR } },
       { k: "step", t: "Grant the Lightning sync engine its two schemas", d: "Lightning tracks changes inside your warehouse rather than on Hightouch infrastructure, so it needs write access. Basic is read-only and fine under ~100K rows. Run this after the block above, not before — the ownership transfer depends on those schemas existing.", code: { lang: "sql", src: SQL_LIGHTNING } },
-      { k: "step", t: "Generate an RSA key pair and attach the public key", d: "Move the .p8 somewhere stable like ~/.ssh/ — you'll upload it to Hightouch in Phase 3 and point dbt at a second one in Phase 2. Add *.p8 to .gitignore before you write a single model.", code: { lang: "bash", src: BASH_KEYS } },
+      { k: "step", t: "Generate the RSA key pair outside the repo", d: "~/.ssh/ keeps it away from anything you might publish. You'll upload this .p8 to Hightouch in Phase 3 and generate a second pair for dbt in Phase 2.", code: { lang: "bash", src: BASH_KEYS } },
+      { k: "step", t: "Attach the public key and check the fingerprint", d: "Compare RSA_PUBLIC_KEY_FP against the base64 the openssl command printed. A subtly wrong key doesn't fail here — it fails later inside Hightouch's connection form, which tells you almost nothing about why.", code: { lang: "sql", src: SQL_ATTACH_KEY } },
       { k: "step", t: "Install a CLI and prove the key works", d: "Do this before you touch Hightouch. If the key is wrong you want to find out against a tool that gives you a real error message, not against a connection form that just says it failed.", code: { lang: "bash", src: BASH_CLI } },
       { k: "note", t: "A fresh trial has no network policy, so Hightouch connects without further work. If you later add one — or repeat this against a client account that has one — you allowlist Hightouch's published IP ranges. PrivateLink is the Business-tier alternative." },
       { k: "verify", t: "MFA enrolled and recovery codes saved somewhere you'll find them" },
