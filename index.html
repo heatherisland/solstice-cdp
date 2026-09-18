@@ -1,0 +1,1298 @@
+<title>Hightouch Capstone Walkthrough</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --bg: #f4f5f3;
+    --surface: #ffffff;
+    --surface-2: #eceeea;
+    --line: #dfe2dd;
+    --line-strong: #c6ccc5;
+    --text: #1b1f1d;
+    --muted: #666d69;
+    --accent: #1d6b57;
+    --accent-ink: #12483a;
+    --accent-soft: #e2eee9;
+    --warn: #9a5f12;
+    --warn-soft: #f6ecda;
+    --done: #2d7d5f;
+    --shadow: 0 1px 2px rgba(20,32,28,.06), 0 8px 24px -16px rgba(20,32,28,.22);
+    --radius: 10px;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --display: "Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141816;
+      --surface: #1b201e;
+      --surface-2: #232927;
+      --line: #2c3431;
+      --line-strong: #3d4643;
+      --text: #e6eae8;
+      --muted: #96a09b;
+      --accent: #63c3a3;
+      --accent-ink: #9adcc2;
+      --accent-soft: #1c302a;
+      --warn: #d9a659;
+      --warn-soft: #2e2617;
+      --done: #63c3a3;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141816;
+    --surface: #1b201e;
+    --surface-2: #232927;
+    --line: #2c3431;
+    --line-strong: #3d4643;
+    --text: #e6eae8;
+    --muted: #96a09b;
+    --accent: #63c3a3;
+    --accent-ink: #9adcc2;
+    --accent-soft: #1c302a;
+    --warn: #d9a659;
+    --warn-soft: #2e2617;
+    --done: #63c3a3;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { text-wrap: balance; margin: 0; }
+  p { margin: 0; }
+  a { color: var(--accent-ink); }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding-inline: 16px;
+    padding-block: 0 64px;
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead {
+    padding-block: 28px 20px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px 32px;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .masthead h1 {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(26px, 4.4vw, 40px);
+    letter-spacing: -.02em;
+    line-height: 1.05;
+    margin-top: 6px;
+  }
+  .masthead .sub { color: var(--muted); margin-top: 8px; max-width: 54ch; }
+
+  .meter-block { min-width: 230px; flex: 0 1 300px; }
+  .meter-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: var(--mono); font-size: 12px; color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .meter-head b { color: var(--text); font-size: 20px; font-weight: 600; }
+  .bar {
+    height: 8px; border-radius: 99px; background: var(--surface-2);
+    overflow: hidden; margin-top: 8px; border: 1px solid var(--line);
+  }
+  .bar > i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .35s ease; }
+  .savenote {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    margin-top: 8px; display: flex; align-items: center; gap: 6px;
+  }
+  .dot { width: 6px; height: 6px; border-radius: 99px; background: var(--done); flex: none; }
+  .dot.local { background: var(--warn); }
+
+  /* ---------- layout ---------- */
+  .cols { display: grid; grid-template-columns: 232px minmax(0,1fr); gap: 40px; margin-top: 28px; align-items: start; }
+  @media (max-width: 880px) { .cols { grid-template-columns: minmax(0,1fr); gap: 20px; } }
+
+  /* ---------- rail ---------- */
+  .rail { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+  @media (max-width: 880px) {
+    .rail { position: static; overflow-x: auto; }
+    .rail ol { display: flex; gap: 8px; padding-bottom: 6px; }
+    .rail li { flex: none; }
+    .rail .rl-meter { display: none; }
+  }
+  .rail ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  .rail a {
+    display: grid; grid-template-columns: 26px minmax(0,1fr); gap: 8px; align-items: center;
+    padding: 6px 8px; border-radius: 7px; text-decoration: none; color: var(--text);
+    border: 1px solid transparent; white-space: nowrap;
+  }
+  .rail a:hover { background: var(--surface-2); }
+  .rail a.on { background: var(--accent-soft); border-color: var(--accent); }
+  .rail .rl-n { font-family: var(--mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .rail a.on .rl-n { color: var(--accent-ink); }
+  .rail .rl-t { font-size: 13px; overflow: hidden; text-overflow: ellipsis; }
+  .rail .rl-meter { grid-column: 2; height: 3px; background: var(--line); border-radius: 99px; overflow: hidden; }
+  .rail .rl-meter > i { display: block; height: 100%; background: var(--done); width: 0; }
+
+  /* ---------- panels ---------- */
+  .panel {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+  }
+  .panel > summary, .panel-head {
+    padding: 14px 16px; display: flex; align-items: center; gap: 10px;
+    cursor: pointer; list-style: none; font-weight: 600;
+  }
+  .panel > summary::-webkit-details-marker { display: none; }
+  .panel > summary::after {
+    content: "▾"; margin-left: auto; color: var(--muted); font-size: 12px; transition: transform .2s;
+  }
+  .panel[open] > summary::after { transform: rotate(180deg); }
+  .panel-body { padding: 0 16px 16px; }
+
+  .field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 16px; }
+  label.field { display: grid; gap: 4px; }
+  label.field > span {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  input[type="text"], textarea {
+    font-family: var(--mono); font-size: 13px; color: var(--text);
+    background: var(--bg); border: 1px solid var(--line-strong); border-radius: 6px;
+    padding: 7px 9px; width: 100%; resize: vertical;
+  }
+  textarea { font-family: var(--sans); font-size: 14px; line-height: 1.5; min-height: 74px; }
+  input:focus-visible, textarea:focus-visible, a:focus-visible, button:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+  .hint { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+
+  /* ---------- phases ---------- */
+  .phase { margin-top: 36px; scroll-margin-top: 16px; }
+  .phase-head { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; border-bottom: 2px solid var(--text); padding-bottom: 8px; }
+  .phase-head h2 { font-family: var(--display); font-weight: 700; font-size: 23px; letter-spacing: -.015em; }
+  .phase-num {
+    font-family: var(--mono); font-size: 12px; font-weight: 600;
+    color: var(--accent-ink); background: var(--accent-soft);
+    padding: 2px 7px; border-radius: 5px; letter-spacing: .04em;
+  }
+  .phase-count {
+    margin-left: auto; font-family: var(--mono); font-size: 12px; color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .phase-count.complete { color: var(--done); }
+  .goal { color: var(--muted); margin-top: 10px; max-width: 68ch; }
+  .course {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .05em;
+    color: var(--accent-ink); background: var(--accent-soft);
+    display: inline-block; padding: 3px 8px; border-radius: 5px; margin-top: 10px;
+  }
+  .course.pre { color: var(--warn); background: var(--warn-soft); }
+
+  .opt-toggle {
+    display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+    font-family: var(--mono); font-size: 11px; letter-spacing: .05em;
+    color: var(--muted); border: 1px dashed var(--line-strong);
+    padding: 3px 9px; border-radius: 5px;
+  }
+  .opt-toggle input { width: 13px; height: 13px; margin: 0; accent-color: var(--accent); }
+  .opt-toggle.on { color: var(--accent-ink); border-style: solid; border-color: var(--accent); background: var(--accent-soft); }
+  .phase.optional .phase-head { border-bottom-style: dashed; border-bottom-width: 1px; border-bottom-color: var(--line-strong); }
+  .phase.optional .phase-num { background: var(--surface-2); color: var(--muted); }
+  .phase.optional.included .phase-num { background: var(--accent-soft); color: var(--accent-ink); }
+  .rail a .rl-opt { font-family: var(--mono); font-size: 9px; color: var(--muted); }
+
+  .intro-list { display: grid; gap: 12px; max-width: 70ch; }
+
+  .block { margin-top: 16px; }
+  .block.note { max-width: 68ch; }
+  .subhead {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .11em; text-transform: uppercase;
+    color: var(--muted); margin-top: 24px; padding-bottom: 6px; border-bottom: 1px solid var(--line);
+  }
+
+  .check {
+    display: grid; grid-template-columns: 20px minmax(0,1fr); gap: 10px;
+    padding: 7px 0; align-items: start; border-bottom: 1px solid var(--line);
+  }
+  .check:last-of-type { border-bottom: 0; }
+  .check input { margin: 3px 0 0; width: 16px; height: 16px; accent-color: var(--accent); }
+  .check .ct { transition: color .2s, opacity .2s; }
+  .check input:checked + .ct { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line-strong); }
+  .check .ct em { font-style: normal; color: var(--muted); display: block; font-size: 13px; margin-top: 2px; }
+  .check code, .block code, td code { font-family: var(--mono); font-size: .88em; background: var(--surface-2); padding: 1px 4px; border-radius: 4px; }
+
+  .codewrap { margin-top: 12px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+  .codebar {
+    display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 12px;
+    background: var(--surface-2); border-bottom: 1px solid var(--line);
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+  }
+  .codebar button {
+    margin-left: auto; font-family: var(--mono); font-size: 11px; letter-spacing: .04em;
+    background: var(--surface); color: var(--text); border: 1px solid var(--line-strong);
+    border-radius: 5px; padding: 3px 9px; cursor: pointer;
+  }
+  .codebar button:hover { border-color: var(--accent); color: var(--accent-ink); }
+  .codewrap pre { margin: 0; overflow-x: auto; padding: 12px; }
+  .codewrap code { font-family: var(--mono); font-size: 12.5px; line-height: 1.6; white-space: pre; background: none; padding: 0; }
+
+  .tablewrap { overflow-x: auto; margin-top: 12px; border: 1px solid var(--line); border-radius: 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 520px; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase;
+    color: var(--muted); background: var(--surface-2); font-weight: 500;
+  }
+  tr:last-child td { border-bottom: 0; }
+  td input[type="text"] { padding: 5px 7px; font-size: 12.5px; }
+
+  .callout {
+    margin-top: 14px; padding: 11px 14px; border-left: 3px solid var(--warn);
+    background: var(--warn-soft); border-radius: 0 7px 7px 0; font-size: 14px; max-width: 68ch;
+  }
+
+  .notes-label {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 5px; display: block;
+  }
+
+  footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <div class="eyebrow">Hightouch Solutions Partner · capstone build</div>
+      <h1>Hightouch Capstone Walkthrough</h1>
+      <p class="sub">A self-directed capstone for the Hightouch Solutions Partner certification: eleven phases from an empty Snowflake trial to running lifecycle journeys, in the order the Academy courses teach them. Tick as you go — your progress is yours alone, saved in this browser.</p>
+    </div>
+    <div class="meter-block">
+      <div class="meter-head"><span>Overall</span><span><b id="pctDone">0</b>%</span></div>
+      <div class="bar"><i id="barAll"></i></div>
+      <div class="meter-head" style="margin-top:6px"><span id="countAll">0 of 0 steps</span><span id="phasesDone">0 phases clear</span></div>
+      <div class="savenote"><span class="dot" id="saveDot"></span><span id="saveMsg">Connecting…</span></div>
+    </div>
+  </header>
+
+  <div class="cols">
+    <nav class="rail" aria-label="Phases"><ol id="rail"></ol></nav>
+
+    <main>
+      <details class="panel" id="clientPanel" open style="margin-bottom:16px">
+        <summary>The client — Solstice Skin</summary>
+        <div class="panel-body">
+          <div class="intro-list">
+            <p><b>Solstice Skin is invented for this build,</b> along with every row of its data, which you generate in Phase 1. Nothing here touches a real company or a real customer. But the shape of the business is deliberately ordinary, because the interesting problems in a composable CDP deployment come from ordinary businesses.</p>
+            <p>Direct-to-consumer skincare, founded 2023, based in Austin, eleven people. They sell a 40-SKU line — cleansers, serums, moisturizers, SPF — through their own Shopify storefront and an iOS app, with a small wholesale line into regional spas. About 5,000 customers and 14,000 orders since launch, average order value in the mid-eighties, and roughly 900 active replenishment subscriptions. Acquisition is mostly paid social and influencer, with email and SMS doing the retention work.</p>
+          </div>
+          <div class="tablewrap">
+            <table>
+              <thead><tr><th>Layer</th><th>What they run today</th></tr></thead>
+              <tbody>
+                <tr><td>Commerce</td><td>Shopify, plus an iOS app and a small retail channel</td></tr>
+                <tr><td>Messaging</td><td>Klaviyo for email and SMS</td></tr>
+                <tr><td>Paid</td><td>Meta and Google, managed by a two-person agency</td></tr>
+                <tr><td>Warehouse</td><td>Snowflake, stood up by a contractor last year, lightly used</td></tr>
+                <tr><td>Transformation</td><td>dbt, installed but barely adopted</td></tr>
+                <tr><td>Data team</td><td>None. A fractional consultant — you</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="intro-list" style="margin-top:14px">
+            <p><b>Why they called.</b> Every segment they can build lives inside Klaviyo, so it can only see email behavior and whatever Shopify syncs through an app. Subscription state, wholesale orders, app activity and web browsing are all invisible to marketing. When the lifecycle manager wants a list, she files a request, waits a week, and the campaign ships late or not at all. Meanwhile paid is still serving ads to people who ordered on Tuesday, because the suppression list is a CSV someone uploads when they remember.</p>
+            <p><b>What they asked for.</b> Marketers building and activating their own audiences on warehouse data. One definition of "VIP" and "lapsed" that holds in every channel. Suppression that runs on a schedule instead of on someone's memory. And a winback program with a real holdout, so they can tell whether it works.</p>
+            <p><b>What constrains you.</b> No budget for an enterprise CDP, which is the whole reason composable is on the table. Legal is cautious about consent, so merge rules need writing down and defending. And you are part-time, so anything you build has to survive you not being there on a Thursday.</p>
+          </div>
+        </div>
+      </details>
+
+      <details class="panel" id="introPanel" open style="margin-bottom:16px">
+        <summary>How this maps to the Academy courses</summary>
+        <div class="panel-body">
+          <div class="intro-list">
+            <p>The five courses teach the tool. This build is what they leave out, arranged so you can do each phase as you finish the course it belongs to.</p>
+            <p><b>Phases 1 and 2 have no course equivalent.</b> Academy assumes you arrive with modeled data already in the warehouse. That's fine for the exam and wrong for real engagements, where the modeling is most of the work and the reason projects stall. They're marked in amber so it's clear they're yours, not the curriculum's.</p>
+            <p>Phase 6b is the other half of Customer Studio Use Cases — paid audiences rather than lifecycle. It's off by default and doesn't count toward your progress until you add it.</p>
+          </div>
+          <div class="tablewrap">
+            <table>
+              <thead><tr><th>Course</th><th>Phases</th></tr></thead>
+              <tbody>
+                <tr><td>Introduction to Composable CDPs</td><td>The framing — no phase of its own</td></tr>
+                <tr><td><i>No course covers this</i></td><td>1 · 2 &nbsp;<span style="color:var(--warn)">prerequisite</span></td></tr>
+                <tr><td>Data Activation with Hightouch</td><td>0 · 3 · 4</td></tr>
+                <tr><td>Mastering Customer Studio</td><td>5 · 6</td></tr>
+                <tr><td>Customer Studio Use Cases</td><td>7 &nbsp;· 6b (optional)</td></tr>
+                <tr><td>Working With Your Hightouch Team</td><td>8 · 9 · 10</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+
+      <details class="panel" id="envPanel" open>
+        <summary>Workspace values</summary>
+        <div class="panel-body">
+          <div class="field-grid" id="envGrid"></div>
+          <p class="hint">Identifiers only — never paste a private key, API key or password here. This page's storage is shared with anyone you give access to.</p>
+        </div>
+      </details>
+
+      <div id="phases"></div>
+
+      <footer>
+        Solstice Skin and all of its data are invented for this exercise. Phases 5–7 and 6b need Customer Studio (Business tier); everything else runs on a free Hightouch workspace. Your checkboxes and notes are stored in your own browser and are visible to nobody else.
+      </footer>
+    </main>
+  </div>
+</div>
+
+<script>
+/* ---------------------------------------------------------------- content */
+const S = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+const SQL_SETUP = `USE ROLE ACCOUNTADMIN;
+
+CREATE WAREHOUSE SOLSTICE_WH
+  WAREHOUSE_SIZE = 'XSMALL'
+  AUTO_SUSPEND = 60
+  AUTO_RESUME = TRUE
+  INITIALLY_SUSPENDED = TRUE;
+
+CREATE DATABASE SOLSTICE;
+CREATE SCHEMA SOLSTICE.RAW;        -- synthetic source data
+CREATE SCHEMA SOLSTICE.ANALYTICS;  -- dbt output, what Hightouch reads
+
+CREATE ROLE SOLSTICE_HIGHTOUCH;
+CREATE USER SOLSTICE_HT_SVC
+  DEFAULT_ROLE = SOLSTICE_HIGHTOUCH
+  DEFAULT_WAREHOUSE = SOLSTICE_WH
+  TYPE = SERVICE;
+GRANT ROLE SOLSTICE_HIGHTOUCH TO USER SOLSTICE_HT_SVC;
+
+GRANT USAGE ON WAREHOUSE SOLSTICE_WH TO ROLE SOLSTICE_HIGHTOUCH;
+GRANT USAGE ON DATABASE SOLSTICE TO ROLE SOLSTICE_HIGHTOUCH;
+GRANT USAGE ON ALL SCHEMAS IN DATABASE SOLSTICE TO ROLE SOLSTICE_HIGHTOUCH;
+GRANT USAGE ON FUTURE SCHEMAS IN DATABASE SOLSTICE TO ROLE SOLSTICE_HIGHTOUCH;
+GRANT SELECT ON ALL TABLES IN DATABASE SOLSTICE TO ROLE SOLSTICE_HIGHTOUCH;
+GRANT SELECT ON FUTURE TABLES IN DATABASE SOLSTICE TO ROLE SOLSTICE_HIGHTOUCH;
+GRANT SELECT ON ALL VIEWS IN DATABASE SOLSTICE TO ROLE SOLSTICE_HIGHTOUCH;
+GRANT SELECT ON FUTURE VIEWS IN DATABASE SOLSTICE TO ROLE SOLSTICE_HIGHTOUCH;`;
+
+const SQL_LIGHTNING = `CREATE SCHEMA IF NOT EXISTS SOLSTICE.HIGHTOUCH_AUDIT;
+CREATE SCHEMA IF NOT EXISTS SOLSTICE.HIGHTOUCH_PLANNER;
+GRANT OWNERSHIP ON SCHEMA SOLSTICE.HIGHTOUCH_AUDIT TO ROLE SOLSTICE_HIGHTOUCH;
+GRANT OWNERSHIP ON SCHEMA SOLSTICE.HIGHTOUCH_PLANNER TO ROLE SOLSTICE_HIGHTOUCH;`;
+
+const BASH_KEYS = `openssl genrsa 2048 | openssl pkcs8 -topk8 -inform PEM -out solstice_ht_key.p8 -nocrypt
+openssl rsa -in solstice_ht_key.p8 -pubout -out solstice_ht_key.pub
+
+# strip header, footer and newlines from the .pub, then in Snowflake:
+# ALTER USER SOLSTICE_HT_SVC SET RSA_PUBLIC_KEY = 'MIIBIjANBgkq...';`;
+
+const SQL_SEED_1 = `USE ROLE ACCOUNTADMIN;
+USE WAREHOUSE SOLSTICE_WH;
+USE SCHEMA SOLSTICE.RAW;
+
+CREATE OR REPLACE TABLE PRODUCTS AS
+SELECT
+  'prod_' || LPAD(n::string, 4, '0') AS product_id,
+  'SS-'   || LPAD(n::string, 4, '0') AS sku,
+  GET(ARRAY_CONSTRUCT('Cleanser','Serum','Moisturizer','SPF','Toner','Mask','Eye Cream','Oil'),
+      MOD(n, 8))::string
+    || ' ' ||
+  GET(ARRAY_CONSTRUCT('Calm','Glow','Renew','Bright','Barrier','Hydra'), MOD(n, 6))::string
+                                     AS product_name,
+  GET(ARRAY_CONSTRUCT('cleanse','treat','moisturize','protect'), MOD(n, 4))::string AS category,
+  ROUND(UNIFORM(14, 96, RANDOM()) + 0.99, 2) AS price,
+  MOD(n, 3) = 0                      AS subscription_eligible
+FROM (SELECT SEQ4() + 1 AS n FROM TABLE(GENERATOR(ROWCOUNT => 40)));
+
+CREATE OR REPLACE TABLE CUSTOMERS AS
+WITH g AS (SELECT SEQ4() + 1 AS n FROM TABLE(GENERATOR(ROWCOUNT => 5000))),
+base AS (
+  SELECT n,
+    GET(ARRAY_CONSTRUCT('ava','noah','mia','liam','zoe','ethan','luna','kai',
+                        'nora','isla','owen','maya'), UNIFORM(0, 11, RANDOM()))::string AS fn,
+    GET(ARRAY_CONSTRUCT('reyes','okafor','tran','silva','haddad','novak',
+                        'ibrahim','petrov','nakamura','moreau'), UNIFORM(0, 9, RANDOM()))::string AS ln
+  FROM g
+)
+SELECT
+  'cust_' || LPAD(n::string, 6, '0')                          AS customer_id,
+  fn                                                          AS first_name,
+  ln                                                          AS last_name,
+  fn || '.' || ln || n || '@solstice-test.com'                AS email,
+  '+1' || UNIFORM(2000000000, 9899999999, RANDOM())::string   AS phone,
+  GET(ARRAY_CONSTRUCT('TX','CA','NY','FL','IL','WA','GA','CO','AZ','NC'),
+      UNIFORM(0, 9, RANDOM()))::string                        AS state,
+  DATEADD(day, -UNIFORM(1, 900, RANDOM()), CURRENT_DATE())::date AS signup_date,
+  UNIFORM(1, 10, RANDOM()) <= 7                               AS marketing_consent,
+  GET(ARRAY_CONSTRUCT('oily','dry','combination','sensitive','normal'),
+      UNIFORM(0, 4, RANDOM()))::string                        AS skin_type,
+  GET(ARRAY_CONSTRUCT('paid_social','organic_search','paid_search','email','referral','influencer'),
+      UNIFORM(0, 5, RANDOM()))::string                        AS acquisition_channel
+FROM base;
+
+-- The duplicates. Same human, second account, dirty email string.
+INSERT INTO CUSTOMERS
+SELECT
+  'cust_9' || LPAD(ROW_NUMBER() OVER (ORDER BY customer_id)::string, 5, '0'),
+  first_name, last_name,
+  '  ' || UPPER(email) || ' ',
+  phone, state,
+  DATEADD(day, UNIFORM(1, 60, RANDOM()), signup_date)::date,
+  marketing_consent, skin_type, 'referral'
+FROM CUSTOMERS SAMPLE (3);`;
+
+const SQL_SEED_2 = `CREATE OR REPLACE TABLE ORDERS AS
+WITH c AS (
+  SELECT customer_id, signup_date, ROW_NUMBER() OVER (ORDER BY customer_id) AS rn
+  FROM CUSTOMERS
+),
+picks AS (
+  SELECT SEQ4() + 1 AS n,
+         1 + FLOOR(POWER(UNIFORM(0::float, 1::float, RANDOM()), 2.2)
+                   * (SELECT COUNT(*) FROM CUSTOMERS)) AS rn
+  FROM TABLE(GENERATOR(ROWCOUNT => 14000))
+)
+SELECT
+  'ord_' || LPAD(p.n::string, 7, '0') AS order_id,
+  c.customer_id,
+  DATEADD(day, UNIFORM(0, GREATEST(DATEDIFF(day, c.signup_date, CURRENT_DATE()), 1), RANDOM()),
+          c.signup_date)::date        AS order_date,
+  GET(ARRAY_CONSTRUCT('completed','completed','completed','completed','refunded','cancelled'),
+      UNIFORM(0, 5, RANDOM()))::string AS status,
+  GET(ARRAY_CONSTRUCT('web','web','web','ios','retail'), UNIFORM(0, 4, RANDOM()))::string AS channel,
+  IFF(UNIFORM(1, 10, RANDOM()) <= 3,
+      GET(ARRAY_CONSTRUCT('WELCOME15','GLOW20','BFCM30','WINBACK25'),
+          UNIFORM(0, 3, RANDOM()))::string, NULL) AS discount_code
+FROM picks p JOIN c ON c.rn = p.rn;
+
+CREATE OR REPLACE TABLE ORDER_ITEMS AS
+WITH k AS (SELECT SEQ4() + 1 AS i FROM TABLE(GENERATOR(ROWCOUNT => 4))),
+prod AS (SELECT product_id, price, ROW_NUMBER() OVER (ORDER BY product_id) AS rn FROM PRODUCTS),
+lines AS (
+  SELECT o.order_id, k.i,
+         1 + MOD(ABS(HASH(o.order_id, k.i)), 40)    AS prn,
+         1 + MOD(ABS(HASH(o.order_id, k.i, 3)), 2)  AS qty
+  FROM ORDERS o
+  JOIN k ON k.i <= 1 + MOD(ABS(HASH(o.order_id)), 4)
+)
+SELECT l.order_id || '_' || l.i AS order_item_id,
+       l.order_id, p.product_id, l.qty AS quantity, p.price AS unit_price
+FROM lines l JOIN prod p ON p.rn = l.prn;`;
+
+const SQL_SEED_3 = `CREATE OR REPLACE TABLE WEB_EVENTS AS
+WITH c AS (SELECT customer_id, ROW_NUMBER() OVER (ORDER BY customer_id) AS rn FROM CUSTOMERS),
+g AS (
+  SELECT SEQ4() + 1 AS n,
+         1 + FLOOR(POWER(UNIFORM(0::float, 1::float, RANDOM()), 1.8)
+                   * (SELECT COUNT(*) FROM CUSTOMERS)) AS rn,
+         UNIFORM(1, 100, RANDOM()) AS roll
+  FROM TABLE(GENERATOR(ROWCOUNT => 120000))
+)
+SELECT
+  'evt_' || LPAD(g.n::string, 8, '0')                          AS event_id,
+  'anon_' || LPAD(g.rn::string, 6, '0') || '_' || MOD(g.n, 3)  AS anonymous_id,
+  IFF(g.roll <= 65, c.customer_id, NULL)                       AS customer_id,
+  GET(ARRAY_CONSTRUCT('page_view','page_view','page_view','product_viewed',
+                      'add_to_cart','checkout_started','search'),
+      UNIFORM(0, 6, RANDOM()))::string                         AS event_name,
+  DATEADD(second, -UNIFORM(0, 15552000, RANDOM()), CURRENT_TIMESTAMP()) AS event_at,
+  'prod_' || LPAD((1 + MOD(ABS(HASH(g.n)), 40))::string, 4, '0') AS product_id,
+  GET(ARRAY_CONSTRUCT('google','meta','tiktok','klaviyo','direct'),
+      UNIFORM(0, 4, RANDOM()))::string                         AS utm_source,
+  GET(ARRAY_CONSTRUCT('always_on','spring_glow','bfcm','winback','none'),
+      UNIFORM(0, 4, RANDOM()))::string                         AS utm_campaign
+FROM g JOIN c ON c.rn = g.rn;
+
+-- Keyed on email only. No customer_id. This is what an ESP export looks like.
+CREATE OR REPLACE TABLE EMAIL_ENGAGEMENT AS
+WITH c AS (SELECT email, ROW_NUMBER() OVER (ORDER BY email) AS rn FROM CUSTOMERS),
+g AS (
+  SELECT SEQ4() + 1 AS n,
+         1 + MOD(ABS(HASH(SEQ4())), (SELECT COUNT(*) FROM CUSTOMERS)) AS rn
+  FROM TABLE(GENERATOR(ROWCOUNT => 60000))
+)
+SELECT
+  'eml_' || LPAD(g.n::string, 8, '0') AS engagement_id,
+  c.email,
+  GET(ARRAY_CONSTRUCT('delivered','delivered','open','open','click','unsubscribe'),
+      UNIFORM(0, 5, RANDOM()))::string AS event_type,
+  GET(ARRAY_CONSTRUCT('welcome_1','welcome_2','abandoned_cart','winback_30',
+                      'newsletter','replenishment'), UNIFORM(0, 5, RANDOM()))::string AS campaign_name,
+  DATEADD(second, -UNIFORM(0, 15552000, RANDOM()), CURRENT_TIMESTAMP()) AS event_at
+FROM g JOIN c ON c.rn = g.rn;
+
+CREATE OR REPLACE TABLE SUBSCRIPTIONS AS
+WITH c AS (SELECT customer_id, signup_date, ROW_NUMBER() OVER (ORDER BY customer_id) AS rn FROM CUSTOMERS),
+g AS (
+  SELECT SEQ4() + 1 AS n,
+         1 + FLOOR(POWER(UNIFORM(0::float, 1::float, RANDOM()), 3.0)
+                   * (SELECT COUNT(*) FROM CUSTOMERS)) AS rn
+  FROM TABLE(GENERATOR(ROWCOUNT => 900))
+)
+SELECT
+  'sub_' || LPAD(g.n::string, 6, '0') AS subscription_id,
+  c.customer_id,
+  'prod_' || LPAD((1 + MOD(ABS(HASH(g.n)), 40))::string, 4, '0') AS product_id,
+  GET(ARRAY_CONSTRUCT('active','active','active','paused','cancelled'),
+      UNIFORM(0, 4, RANDOM()))::string AS status,
+  DATEADD(day, UNIFORM(0, 200, RANDOM()), c.signup_date)::date AS started_at,
+  DATEADD(day, UNIFORM(1, 45, RANDOM()), CURRENT_DATE())::date AS next_ship_date
+FROM g JOIN c ON c.rn = g.rn;`;
+
+const SQL_VERIFY = `SELECT 'customers' t, COUNT(*) n FROM CUSTOMERS
+UNION ALL SELECT 'dupe emails', COUNT(*) FROM (
+  SELECT LOWER(TRIM(email)) e FROM CUSTOMERS GROUP BY 1 HAVING COUNT(*) > 1)
+UNION ALL SELECT 'orders', COUNT(*) FROM ORDERS
+UNION ALL SELECT 'order_items', COUNT(*) FROM ORDER_ITEMS
+UNION ALL SELECT 'web_events', COUNT(*) FROM WEB_EVENTS
+UNION ALL SELECT 'anon events', COUNT(*) FROM WEB_EVENTS WHERE customer_id IS NULL
+UNION ALL SELECT 'email_engagement', COUNT(*) FROM EMAIL_ENGAGEMENT
+UNION ALL SELECT 'subscriptions', COUNT(*) FROM SUBSCRIPTIONS;`;
+
+const YAML_PROFILE = `solstice_cdp:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: ORGNAME-ACCOUNTNAME
+      user: SOLSTICE_DBT      # your own user, not the Hightouch service account
+      private_key_path: ~/.ssh/solstice_dbt_key.p8
+      role: ACCOUNTADMIN
+      database: SOLSTICE
+      warehouse: SOLSTICE_WH
+      schema: ANALYTICS
+      threads: 4`;
+
+const SQL_SPINE = `-- models/intermediate/int_identity_spine.sql
+with normalized as (
+    select
+        customer_id,
+        lower(trim(email)) as email_norm,
+        first_name, last_name, phone, state,
+        skin_type, acquisition_channel, marketing_consent,
+        signup_date
+    from {{ ref('stg_customers') }}
+    where email is not null
+),
+
+canonical as (
+    select
+        email_norm,
+        min(customer_id)  as person_id,          -- deterministic survivor
+        min(signup_date)  as first_signup_date,
+        count(*)          as account_count,
+        max(marketing_consent) as marketing_consent  -- most permissive wins
+    from normalized
+    group by 1
+)
+
+select
+    n.customer_id,
+    c.person_id,
+    c.email_norm as email,
+    n.first_name, n.last_name, n.phone, n.state,
+    n.skin_type, n.acquisition_channel,
+    c.marketing_consent,
+    c.first_signup_date,
+    c.account_count
+from normalized n
+join canonical c using (email_norm)`;
+
+const SQL_ANON = `-- models/intermediate/int_anonymous_identity.sql
+select
+    e.anonymous_id,
+    min(s.person_id) as person_id
+from {{ ref('stg_web_events') }} e
+join {{ ref('int_identity_spine') }} s on s.customer_id = e.customer_id
+where e.customer_id is not null
+group by 1`;
+
+const SQL_TIERS = `-- RFM quintiles over the customer base
+rfm as (
+    select
+        person_id,
+        ntile(5) over (order by days_since_last_order desc) as rfm_r,
+        ntile(5) over (order by order_count asc)            as rfm_f,
+        ntile(5) over (order by net_revenue asc)            as rfm_m
+    from purchase_facts
+)
+
+-- lifecycle tier: first match wins
+case
+    when order_count = 0                                       then 'prospect'
+    when order_count = 1
+         and days_since_last_order <= 30                       then 'new'
+    when rfm_r >= 4 and rfm_f >= 4 and rfm_m >= 4              then 'vip'
+    when days_since_last_order <= 90                           then 'active'
+    when days_since_last_order <= 180                          then 'at_risk'
+    when days_since_last_order <= 365                          then 'lapsed'
+    else 'dormant'
+end as lifecycle_tier
+
+-- churn risk, relative to each person's own cadence
+case
+    when order_count < 2 then null
+    when days_since_last_order > median_days_between_orders * 2.0 then 'high'
+    when days_since_last_order > median_days_between_orders * 1.5 then 'medium'
+    else 'low'
+end as churn_risk`;
+
+const YAML_TESTS = `models:
+  - name: customer_360
+    columns:
+      - name: person_id
+        tests: [unique, not_null]
+      - name: email
+        tests: [unique, not_null]
+      - name: lifecycle_tier
+        tests:
+          - accepted_values:
+              values: [prospect, new, vip, active, at_risk, lapsed, dormant]`;
+
+const YAML_DBTPROJ = `# dbt_project.yml
+models:
+  solstice_cdp:
+    marts:
+      +tags: ['hightouch']`;
+
+const JSON_BRAZE = `{
+  "attributes": [
+    {
+      "external_id": "cust_004182",
+      "email": "mia.tran4182@solstice-test.com",
+      "first_name": "mia",
+      "solstice_lifecycle_tier": "at_risk",
+      "solstice_churn_risk": "high",
+      "solstice_net_revenue": 412.87,
+      "solstice_days_since_last_order": 147,
+      "solstice_top_category": "treat",
+      "_update_existing_only": false
+    }
+  ]
+}`;
+
+const PY_LAMBDA = `import json, os, boto3, datetime
+
+MAX_OBJECTS = 75
+IDENTIFIERS = {"external_id", "user_alias", "braze_id", "email", "phone"}
+s3 = boto3.client("s3")
+
+def handler(event, context):
+    if event["headers"].get("authorization") != f"Bearer {os.environ['FAKE_BRAZE_KEY']}":
+        return {"statusCode": 401, "body": json.dumps({"message": "invalid api key"})}
+
+    body = json.loads(event.get("body") or "{}")
+    objs = body.get("attributes", []) + body.get("events", []) + body.get("purchases", [])
+
+    if len(objs) > MAX_OBJECTS:
+        return {"statusCode": 429,
+                "body": json.dumps({"message": f"{len(objs)} objects exceeds limit of {MAX_OBJECTS}"})}
+
+    errors = [i for i, o in enumerate(objs) if not (IDENTIFIERS & o.keys())]
+    if errors:
+        return {"statusCode": 400,
+                "body": json.dumps({"message": "no identifier", "errors": errors})}
+
+    key = f"received/{datetime.datetime.utcnow():%Y/%m/%d/%H%M%S_%f}.json"
+    s3.put_object(Bucket=os.environ["BUCKET"], Key=key, Body=json.dumps(body))
+
+    return {"statusCode": 201,
+            "body": json.dumps({"message": "success", "attributes_processed": len(objs)})}`;
+
+const SQL_KLAVIYO_FILTER = `where marketing_consent = true
+  and lifecycle_tier in ('vip', 'at_risk')`;
+
+const BASH_API = `export HT_KEY=...
+curl -s https://api.hightouch.com/api/v1/sources \\
+  -H "Authorization: Bearer $HT_KEY" | jq '.data[] | {id, name, type}'
+
+curl -s https://api.hightouch.com/api/v1/syncs \\
+  -H "Authorization: Bearer $HT_KEY" | jq '.data[] | {id, slug, model_id, destination_id, schedule}'`;
+
+const HCL_TF = `terraform {
+  required_providers {
+    hightouch = {
+      source  = "<verify the current registry address>"
+      version = "~> 4.0"
+    }
+  }
+}
+
+provider "hightouch" {
+  api_key = var.hightouch_api_key
+}`;
+
+const SQL_TELEMETRY = `-- Which destinations reject the most rows, last 7 days?
+select destination, error_reason, count(*) as rows_rejected
+from solstice.hightouch_audit.sync_results
+where status = 'rejected'
+  and created_at > dateadd(day, -7, current_timestamp())
+group by 1, 2
+order by 3 desc;`;
+
+const SQL_HASH_NORM = `-- What the destination should receive, built in the model, not in the sync
+select
+    person_id,
+    sha2(lower(trim(email)), 256)                              as email_sha256,
+    -- E.164, digits only, country code included; nulls out anything malformed
+    case
+        when regexp_count(regexp_replace(phone, '[^0-9]', ''), '.') between 11 and 15
+        then sha2(regexp_replace(phone, '[^0-9]', ''), 256)
+    end                                                        as phone_sha256,
+    lower(trim(first_name))                                    as fn_norm,
+    lower(trim(last_name))                                     as ln_norm,
+    upper(trim(state))                                         as st_norm
+from {{ ref('customer_360') }}
+where marketing_consent = true`;
+
+const ENV_FIELDS = [
+  { id: "sf_account",  label: "Snowflake account id", ph: "ORGNAME-ACCOUNTNAME" },
+  { id: "sf_wh",       label: "Warehouse / database",  ph: "SOLSTICE_WH / SOLSTICE" },
+  { id: "ht_source",   label: "Hightouch source id",   ph: "src_…" },
+  { id: "ht_parent",   label: "Parent model id",       ph: "mdl_…" },
+  { id: "ht_sync1",    label: "Klaviyo sync id",       ph: "sync_…" },
+  { id: "ht_sync2",    label: "Webhook sync id",       ph: "sync_…" },
+  { id: "aws_url",     label: "API Gateway URL",       ph: "https://….execute-api…" },
+  { id: "s3_bucket",   label: "S3 bucket",             ph: "solstice-braze-sink" },
+  { id: "ad_account",  label: "Ad account (6b)",       ph: "Meta / Google Ads test account" },
+  { id: "repo",        label: "GitHub repo",           ph: "github.com/you/solstice-cdp" },
+  { id: "teardown",    label: "Teardown date",         ph: "trial expires…" }
+];
+
+const AUDIENCES = [
+  { id: "a1", name: "VIP at risk",              def: "lifecycle_tier = vip AND churn_risk = high" },
+  { id: "a2", name: "Replenishment due",        def: "no active sub AND replenishment due AND order_count ≥ 2" },
+  { id: "a3", name: "Browse abandon, no purchase", def: "product_viewed in 7d AND no order in 7d" },
+  { id: "a4", name: "Category cross-sell",      def: "bought cleanse, never protect, active in 90d" },
+  { id: "a5", name: "Lapsed high value",        def: "net_revenue > 300 AND recency 180–365d" }
+];
+
+// Which Academy course each phase puts into practice.
+const COURSE = {
+  p0: "Data Activation with Hightouch",
+  p1: "Prerequisite — no course covers this",
+  p2: "Prerequisite — no course covers this",
+  p3: "Data Activation with Hightouch",
+  p4: "Data Activation with Hightouch",
+  p5: "Mastering Customer Studio",
+  p6: "Mastering Customer Studio",
+  p6b: "Customer Studio Use Cases — performance half",
+  p7: "Customer Studio Use Cases",
+  p8: "Working With Your Hightouch Team",
+  p9: "Working With Your Hightouch Team",
+  p10: "Working With Your Hightouch Team"
+};
+
+const PHASES = [
+  {
+    id: "p0", n: "0", title: "Environment", hours: "1–2",
+    goal: "A Snowflake trial with an empty SOLSTICE database and a key-pair service account Hightouch can connect to.",
+    items: [
+      { k: "step", t: "Sign up for a Snowflake trial", d: "Enterprise edition, AWS, US region. 30 days and $400 in credits — far more than this burns. Start the clock the same week you plan to do Phases 1 and 2." },
+      { k: "step", t: "Create the warehouse, database, schemas, role and service user", code: { lang: "sql", src: SQL_SETUP } },
+      { k: "step", t: "Grant the Lightning sync engine its two schemas", d: "Lightning tracks changes inside your warehouse rather than on Hightouch infrastructure, so it needs write access. Basic is read-only and fine under ~100K rows.", code: { lang: "sql", src: SQL_LIGHTNING } },
+      { k: "step", t: "Generate an RSA key pair and attach the public key", d: "Snowflake is deprecating password auth for service users. Add *.p8 to .gitignore before you write a single model.", code: { lang: "bash", src: BASH_KEYS } },
+      { k: "note", t: "A fresh trial has no network policy, so Hightouch connects without further work. If you later add one — or repeat this against a client account that has one — you allowlist Hightouch's published IP ranges. PrivateLink is the Business-tier alternative." },
+      { k: "verify", t: "SOLSTICE exists with RAW, ANALYTICS, HIGHTOUCH_AUDIT, HIGHTOUCH_PLANNER" },
+      { k: "verify", t: "SOLSTICE_HT_SVC can USE ROLE SOLSTICE_HIGHTOUCH and USE WAREHOUSE SOLSTICE_WH" },
+      { k: "verify", t: "Key-pair auth connects from snowsql" },
+      { k: "verify", t: "Account identifier recorded above in Workspace values" }
+    ]
+  },
+  {
+    id: "p1", n: "1", title: "Seed the warehouse", hours: "2–3",
+    goal: "Seven raw tables that look like a real DTC brand's source data, including the mess. All of it in a worksheet — no Python, no loaders.",
+    items: [
+      { k: "note", t: "The mess is the point. Clean synthetic data teaches you nothing, because every interesting decision in a composable CDP comes from data that doesn't join cleanly." },
+      { k: "table", head: ["Table", "Rows", "The wrinkle"], rows: [
+        ["CUSTOMERS", "~5,150", "~3% duplicates: same email, different id, dirty casing"],
+        ["PRODUCTS", "40", "A third are subscription-eligible"],
+        ["ORDERS", "14,000", "No stored total — you compute it from line items"],
+        ["ORDER_ITEMS", "~35,000", "1–4 lines per order"],
+        ["WEB_EVENTS", "120,000", "35% anonymous; up to 3 devices per person"],
+        ["EMAIL_ENGAGEMENT", "60,000", "Keyed on email string only, no id"],
+        ["SUBSCRIPTIONS", "~900", "Active, paused and cancelled"]
+      ]},
+      { k: "step", t: "Create PRODUCTS and CUSTOMERS, then insert the duplicates", code: { lang: "sql", src: SQL_SEED_1 } },
+      { k: "step", t: "Create ORDERS and ORDER_ITEMS", d: "The POWER() exponent is the skew dial — raise it for a more concentrated repeat-buyer base.", code: { lang: "sql", src: SQL_SEED_2 } },
+      { k: "step", t: "Create WEB_EVENTS, EMAIL_ENGAGEMENT and SUBSCRIPTIONS", code: { lang: "sql", src: SQL_SEED_3 } },
+      { k: "step", t: "Run the row-count check", code: { lang: "sql", src: SQL_VERIFY } },
+      { k: "verify", t: "All seven tables exist in SOLSTICE.RAW at roughly the right counts" },
+      { k: "verify", t: "dupe emails returns ~150 — if it returns 0, the INSERT … SAMPLE (3) didn't run" },
+      { k: "verify", t: "anon events is roughly 35% of web_events" },
+      { k: "verify", t: "Every order joins to a customer, every line item to an order" }
+    ]
+  },
+  {
+    id: "p2", n: "2", title: "The dbt model layer", hours: "5–7",
+    goal: "A customer_360 table in SOLSTICE.ANALYTICS keyed on a resolved person_id. The phase that decides whether everything downstream is any good.",
+    items: [
+      { k: "note", t: "Every audience a marketer can build is bounded by what exists in this layer. This is the phase most people skip, and it is the one that separates a partner who can run a deployment from one who can only click through the UI." },
+      { k: "step", t: "Scaffold the dbt project and profile", d: "pip install dbt-snowflake, then dbt init solstice_cdp. Keep dbt and Hightouch on separate Snowflake users — dbt writes, Hightouch reads.", code: { lang: "yaml", src: YAML_PROFILE } },
+      { k: "step", t: "Build the staging layer", d: "One view per raw table doing nothing but renaming, casting and trimming. Resist putting logic here." },
+      { k: "step", t: "Build the identity spine", d: "Two decisions to be able to defend: min(customer_id) as survivor is deterministic and reproducible; taking the most permissive consent flag across merged accounts is a choice you'd argue the other way with legal. Write your reasoning down — that document is what clients pay for.", code: { lang: "sql", src: SQL_SPINE } },
+      { k: "step", t: "Resolve anonymous identity through device", d: "Then coalesce the direct match with the device match in fct_web_events. Count how many events that recovers — it's usually the most persuasive number in the whole build.", code: { lang: "sql", src: SQL_ANON } },
+      { k: "step", t: "Build customer_360", d: "Identity, profile, purchase, subscription, engagement, behavior, derived. net_revenue counts completed orders only — but refunded and cancelled orders still count for recency, because someone who ordered and refunded last week is not lapsed." },
+      { k: "step", t: "Add RFM, lifecycle tier and churn risk", d: "Churn risk relative to each person's own cadence, so a monthly replenishment buyer and an annual gift buyer don't share a threshold.", code: { lang: "sql", src: SQL_TIERS } },
+      { k: "step", t: "Add tests before you connect anything", d: "Hightouch will sync whatever you give it, duplicates included.", code: { lang: "yaml", src: YAML_TESTS } },
+      { k: "verify", t: "dbt build passes with zero test failures" },
+      { k: "verify", t: "customer_360 row count is lower than CUSTOMERS — that gap is your resolved duplicates" },
+      { k: "verify", t: "You can state how many anonymous events got attributed, as a number and a percentage" },
+      { k: "verify", t: "Every lifecycle_tier has a non-trivial population (empty vip = wrong thresholds)" },
+      { k: "verify", t: "Repo pushed to GitHub with *.p8 gitignored" }
+    ]
+  },
+  {
+    id: "p3", n: "3", title: "Connect Hightouch", hours: "2",
+    goal: "Snowflake source registered, dbt models available inside Hightouch, Git Sync writing workspace config back to the repo.",
+    items: [
+      { k: "step", t: "Add the Snowflake source", d: "Name it SOLSTICE_SNOWFLAKE. A failed connection here is almost always the role default or a mangled key file, not the network." },
+      { k: "step", t: "Enable the Lightning sync engine", d: "Run a sync in Phase 4, then go look at what Hightouch wrote into HIGHTOUCH_AUDIT and HIGHTOUCH_PLANNER. Being able to describe that mechanism is the answer to the security question every enterprise data team asks." },
+      { k: "step", t: "Connect the dbt models extension", d: "Tag marts models so staging and intermediate stay out of the picker. Hightouch runs dbt compile for preview and queries the materialized table at run time — a model that only exists in the repo will compile then fail.", code: { lang: "yaml", src: YAML_DBTPROJ } },
+      { k: "step", t: "Register three models", code: null },
+      { k: "table", head: ["Model", "Source", "Primary key", "Role"], rows: [
+        ["Solstice Customer 360", "customer_360", "person_id", "Parent model"],
+        ["Solstice Orders", "fct_orders", "order_id", "Related — purchases"],
+        ["Solstice Web Events", "fct_web_events", "event_id", "Event — behavior"]
+      ]},
+      { k: "note", t: "The primary key is what bites people. Hightouch uses it to diff rows between runs and decide what changed, so it must be genuinely unique and stable — which is why the unique test goes in before this step, not after." },
+      { k: "step", t: "Enable Git Sync", d: "Bidirectional: UI edits get written out as YAML, YAML changes get applied back. It versions models, syncs and event contracts including Customer Studio schema models — but not Customer Studio audiences or the syncs generated from them. That governance gap is worth being able to describe." },
+      { k: "verify", t: "Source connects and previews a query against ANALYTICS" },
+      { k: "verify", t: "Lightning enabled, audit and planner schemas visible in Snowflake" },
+      { k: "verify", t: "Three models registered, each previewing the expected row count" },
+      { k: "verify", t: "A UI change to a model appears as a YAML diff in the repo" },
+      { k: "verify", t: "You can explain out loud why person_id is the key and what breaks if it isn't unique" }
+    ]
+  },
+  {
+    id: "p4", n: "4", title: "Reverse ETL syncs", hours: "3–4",
+    goal: "Two working syncs off customer_360 — one to a real ESP, one to an endpoint you built that enforces Braze's contract.",
+    items: [
+      { k: "note", t: "Do these before Customer Studio. Audiences are syncs with a nicer front end; if you can't debug a plain sync you can't debug an audience sync either." },
+      { k: "step", t: "Sync 1 — Klaviyo profiles", d: "Free tier covers 250 profiles. Map email as identifier, push first_name, last_name, state, skin_type, lifecycle_tier, churn_risk, net_revenue, days_since_last_order, top_category.", code: { lang: "sql", src: SQL_KLAVIYO_FILTER } },
+      { k: "step", t: "Read the row-level results and fix a failure at the model layer", d: "Some rows will fail. That's expected and it's the useful part. This loop is where you'll spend most of your real Hightouch time." },
+      { k: "note", t: "Braze's /users/track takes POST with a bearer REST key. The body carries attributes, events and purchases; each object needs at least one identifier, with external_id, user_alias or braze_id taking precedence over email and phone. Current accounts cap a request at 75 objects total. \"_update_existing_only\": false is what lets a call create a profile rather than only update one." },
+      { k: "step", t: "Sync 2 — build the Braze-shaped payload", code: { lang: "json", src: JSON_BRAZE } },
+      { k: "step", t: "Stand up the receiver: API Gateway in front of a Lambda", d: "Reject anything that violates the contract — a destination that accepts everything teaches you nothing.", code: { lang: "python", src: PY_LAMBDA } },
+      { k: "step", t: "Wire the HTTP Request destination, batch size 75", d: "Then deliberately set it to 100 and watch your own endpoint return 429. Reading a rate-limit failure in the sync logs and tracing it back to a batch-size setting is most of what destination troubleshooting actually is." },
+      { k: "table", head: ["Setting", "Choose", "Why"], rows: [
+        ["Sync mode", "Upsert", "Insert-only misses attribute changes; update-only drops new customers"],
+        ["Schedule", "Interval, hourly", "Enough to see behavior without burning credits"],
+        ["Batch size", "75", "The destination's documented limit, not a round number"],
+        ["Alerting", "Failure + row-error threshold", "Silent partial failures are the dangerous kind"]
+      ]},
+      { k: "verify", t: "Klaviyo shows profiles with lifecycle_tier and churn_risk as custom properties" },
+      { k: "verify", t: "Your Lambda has written payloads to S3 that you've opened and read" },
+      { k: "verify", t: "You've deliberately caused a 429 and found it in the sync logs" },
+      { k: "verify", t: "You've deliberately caused a 400 by unmapping the identifier, and fixed it" },
+      { k: "verify", t: "You can explain the difference between a failed sync and one that succeeded with rejected rows" }
+    ]
+  },
+  {
+    id: "p5", n: "5", title: "Customer Studio schema", hours: "3–4",
+    goal: "A schema a non-technical marketer could actually use, without asking you what rfm_m means.",
+    items: [
+      { k: "note", t: "The schema is the contract between the data team and the marketing team. Build it badly and every audience request comes back to you as a ticket — exactly the outcome a composable CDP is sold to prevent." },
+      { k: "step", t: "Create the parent model", d: "customer_360, primary key person_id. One row per audience member, stable key, already carrying the columns your planned audiences need." },
+      { k: "step", t: "Add related models", d: "fct_orders and fct_subscriptions on person_id at 1:many. fct_order_items reaches the parent through orders — the pattern for any many-to-many via an intermediate table." },
+      { k: "step", t: "Add event models", d: "fct_web_events and fct_email_events, each with a timestamp column and a join key back to the parent. Without events you can only segment on attributes." },
+      { k: "step", t: "Set cardinality explicitly on every relationship", d: "Confirm join key data types match on both sides. A type mismatch doesn't error — it silently returns zero rows, and you'll lose an hour to it." },
+      { k: "step", t: "Hide every column a marketer will never filter on", d: "Surrogate keys, customer_id, account_count, raw RFM component scores." },
+      { k: "step", t: "Alias the rest into plain language", d: "days_since_last_order → \"Days since last purchase\". net_revenue → \"Lifetime revenue\". top_category → \"Favorite category\"." },
+      { k: "step", t: "Describe anything with a judgment baked into it", d: "\"Lifetime revenue\" needs a description saying it excludes refunded and cancelled orders, or someone reconciles it against finance and you get the call." },
+      { k: "step", t: "Enable suggestions on the low-cardinality fields", d: "lifecycle_tier, churn_risk, skin_type, state, acquisition_channel, top_category. Under ~100 distinct values Hightouch offers pick-lists instead of free text, removing a whole class of typo-driven empty audiences." },
+      { k: "step", t: "Set privacy levels on email and phone", d: "Even in a sandbox. The habit is the point." },
+      { k: "verify", t: "Parent + two related + one through-relationship + two event models" },
+      { k: "verify", t: "Every relationship has explicit cardinality and matching key types" },
+      { k: "verify", t: "No raw column names visible to a marketer" },
+      { k: "verify", t: "Three throwaway audiences return plausible counts (all / attribute / event+window)" },
+      { k: "verify", t: "Screenshot of the finished schema saved for Phase 10" }
+    ]
+  },
+  {
+    id: "p6", n: "6", title: "Traits and audiences", hours: "4–5",
+    goal: "Six traits and five audiences, each verified against SQL you wrote yourself.",
+    items: [
+      { k: "note", t: "Predict before you look. For every audience, write down the count you expect and the SQL you think it compiles to before you open the preview. The gap is where the learning is." },
+      { k: "table", head: ["Trait", "Method", "Why this one"], rows: [
+        ["Orders last 90 days", "Count", "The workhorse; count over a window"],
+        ["Spend last 180 days", "Aggregation (sum)", "Aggregation across a through-relationship"],
+        ["Last category purchased", "Occurrence (last)", "Occurrence traits drive personalization"],
+        ["Categories browsed", "List", "List traits, and their cardinality trap"],
+        ["Replenishment due", "SQL formula", "Formula over existing fields"],
+        ["Discount dependence", "SQL aggregation", "Custom logic the UI can't express"]
+      ]},
+      { k: "step", t: "Build one trait of each calculation method", d: "Hightouch offers seven: aggregation, count, occurrence, list, SQL aggregation, SQL formula, audience membership. Build them so you know them by feel." },
+      { k: "note", t: "Real-time audiences support only aggregation (sum), count and occurrence. Design a lifecycle program around a list trait or a SQL formula and it cannot run in real time — knowing that before you design is the difference between a scoping conversation and a rebuild." },
+      { k: "predict", t: "Build the five audiences — record your prediction before you open the preview" },
+      { k: "step", t: "Read the generated SQL for each and compare it to what you'd have written", d: "Two things to notice and be able to explain: how Hightouch expresses \"has never done X\" as a not exists rather than a left-join-null, and how event time windows get pushed into the subquery rather than filtered after the join." },
+      { k: "step", t: "Add a split to Replenishment due: 80% treatment, 20% holdout", d: "Splits are how a marketing team proves incrementality. \"Can we hold out a control group\" comes up in roughly every lifecycle conversation." },
+      { k: "step", t: "Sync VIP at risk to Klaviyo and Replenishment due to your webhook", d: "Then compare an audience sync's config to the plain model sync from Phase 4. Same machinery, different front end." },
+      { k: "verify", t: "Six traits, each with a description explaining when to use it" },
+      { k: "verify", t: "Five audiences with predicted and actual counts recorded" },
+      { k: "verify", t: "At least one written note on why a prediction was wrong" },
+      { k: "verify", t: "A split with a holdout, running" },
+      { k: "verify", t: "Two audience syncs live, one per destination" }
+    ]
+  },
+  {
+    id: "p6b", n: "6b", title: "Paid activation", hours: "2–3", optional: true,
+    goal: "The other half of Customer Studio Use Cases: the same customer_360 pushed to ad platforms instead of an ESP.",
+    items: [
+      { k: "note", t: "Lifecycle is only half of what that course covers. The other half is paid — custom audiences, suppression, and lookalike seeds. Skip this and you'll still pass the assessment; do it and you can answer the paid-media question that comes up in every agency conversation." },
+      { k: "step", t: "Add a Meta Custom Audiences or Google Ads Customer Match destination", d: "Use a sandbox or test ad account. Neither platform has a free tier that lets you actually spend, and you don't need one — the point is the sync, not the campaign." },
+      { k: "step", t: "Understand what gets sent before you send it", d: "Ad platforms match on hashed identifiers: lowercase, trimmed, SHA-256. Hightouch handles the hashing, but know what it's sending — \"why is my match rate 40%\" is a question you will be asked, and the answer is almost always normalization upstream, not the destination.", code: { lang: "sql", src: SQL_HASH_NORM } },
+      { k: "step", t: "Build the suppression audience and sync it as an exclusion", d: "Active subscribers plus anyone who ordered in the last 30 days. This is the highest-ROI paid use case there is and the easiest to explain: you are not buying impressions against people who already converted." },
+      { k: "step", t: "Build a lookalike seed from your top RFM quintile", d: "rfm_r, rfm_f and rfm_m all ≥ 4. A seed built on revenue rather than on \"anyone who bought\" is the whole argument for warehouse-native audiences." },
+      { k: "step", t: "Record the match rate for each audience", d: "Put the number in the notes below. It's the figure a paid-media lead will ask for first, and having a real one from your own build beats quoting a case study." },
+      { k: "step", t: "Add a cross-channel exclusion so paid and lifecycle don't double-serve", d: "Anyone currently in the winback journey should be excluded from the paid winback audience. Coordinating channels off one definition of the customer is the thing a composable CDP does that a point solution cannot." },
+      { k: "verify", t: "Two paid audiences live: one suppression, one lookalike seed" },
+      { k: "verify", t: "Match rate recorded for each, with a note on what's limiting it" },
+      { k: "verify", t: "A cross-channel exclusion in place, verified by count" },
+      { k: "verify", t: "You can explain hashing and normalization without looking it up" }
+    ]
+  },
+  {
+    id: "p7", n: "7", title: "Journeys", hours: "3–4",
+    goal: "Two running lifecycle programs, one simple and one with real branching.",
+    items: [
+      { k: "note", t: "Tiles: Entry (join an audience or perform an event), Time Delay, Branch, Send to Destination, Hold Until, Exit. The concept that trips everyone up: journey membership is not audience membership. Once someone enters they stay enrolled until they finish or hit an exit condition — even after they no longer qualify. Design the exits first." },
+      { k: "step", t: "Journey 1 — Welcome", d: "Entry on lifecycle_tier = new → send welcome_1 → wait 3 days → branch on opened? → education vs resend → wait 5 days → hold until order placed → exit." },
+      { k: "step", t: "Set all three welcome exits, not just the happy path", d: "Second order placed, unsubscribed, or 30 days elapsed." },
+      { k: "step", t: "Journey 2 — Winback", d: "Entry on Replenishment due with the 20% holdout excluded so you can measure. Branch on net_revenue: high-value lapsed get a personalized replenishment reminder using Last category purchased; everyone else gets a generic offer. Branch again on churn_risk to decide whether a discount is warranted at all." },
+      { k: "step", t: "Set winback exits", d: "Order placed, unsubscribed, entered a different journey, or 45 days elapsed." },
+      { k: "note", t: "The design question to sit with: should a discount-dependent customer get a discount in this journey? The defensible answer is no, and explaining why in margin terms rather than data terms is what makes a partner worth hiring." },
+      { k: "step", t: "Trace one named person end to end", d: "Entry, each tile, each branch decision, exit. Confirm the payload that reached your Lambda matches the tile that sent it. \"Why did this specific customer get this specific message\" is the most common question a lifecycle client will ever ask you." },
+      { k: "verify", t: "Both journeys running, with members visible at multiple tiles" },
+      { k: "verify", t: "Exit criteria on both — all cases, not just conversion" },
+      { k: "verify", t: "You've traced one named person end to end and can narrate their path" },
+      { k: "verify", t: "The holdout group is genuinely excluded, verified by count" },
+      { k: "verify", t: "A payload in S3 you can match to a specific journey tile" }
+    ]
+  },
+  {
+    id: "p8", n: "8", title: "Codify the workspace", hours: "3–4",
+    goal: "The build reproducible from source rather than from memory. The phase that most distinguishes this from a tutorial.",
+    items: [
+      { k: "note", t: "Almost nobody in the partner directory does this. Everyone can build in the UI; very few can hand a client a repo that recreates their activation layer in a second workspace." },
+      { k: "step", t: "Get an API key and start by reading", d: "Base URL api.hightouch.com/api/v1, bearer token, 200 requests per 10 seconds per workspace. Only workspace admins mint keys, and keys inherit their creator's permissions — ask for one scoped as narrowly as the work allows.", code: { lang: "bash", src: BASH_API } },
+      { k: "step", t: "Write an export script for every source, model, destination and sync", d: "That export is a deliverable in its own right — it's what you'd run on day one of an engagement inheriting someone else's Hightouch." },
+      { k: "step", t: "Do the round trip", d: "Delete a test sync in the UI, recreate it from the exported JSON via POST /syncs. If it runs identically your export is complete. If it doesn't, you've found a field your export missed — better here than during a migration." },
+      { k: "step", t: "Put one destination and one sync under Terraform", d: "The provider is Speakeasy-generated, not a first-party product. Verify the current registry address and supported resources before committing, and don't build a client's process on it without saying what it is.", code: { lang: "hcl", src: HCL_TF } },
+      { k: "step", t: "Change that sync in the UI and run a plan", d: "Watch the drift appear." },
+      { k: "verify", t: "A hightouch/export/ directory in the repo, populated by a script you wrote" },
+      { k: "verify", t: "One sync deleted and recreated from its exported JSON, running identically" },
+      { k: "verify", t: "At least one resource under Terraform management, with drift demonstrated" },
+      { k: "verify", t: "A short written position on what can and cannot be managed as code in Hightouch today" }
+    ]
+  },
+  {
+    id: "p9", n: "9", title: "Operations", hours: "2",
+    goal: "Know when this breaks before a marketer tells you.",
+    items: [
+      { k: "note", t: "Clients don't renew because the audiences were elegant. They renew because the syncs kept running and someone noticed the one time they didn't." },
+      { k: "step", t: "Alert on sync failure", d: "Obvious, and the only one most people set up." },
+      { k: "step", t: "Alert on row-error threshold", d: "The one that matters. A sync that succeeds while rejecting 40% of rows reports green, and nobody finds out until a campaign underperforms." },
+      { k: "step", t: "Alert on sync did not run", d: "A sync silently stopping is worse than one failing loudly." },
+      { k: "step", t: "Write sync results back to Snowflake and query them", d: "This is the composable CDP argument made concrete: activation telemetry lands in the same warehouse as customer data, so \"how many VIP-at-risk customers actually reached Klaviyo this month\" is a query rather than a support ticket.", code: { lang: "sql", src: SQL_TELEMETRY } },
+      { k: "step", t: "Connect the dbt observability layer", d: "Prevents the expensive failure: dbt fails overnight, customer_360 goes stale, syncs keep running happily on yesterday's data, and a winback journey emails people who bought this morning." },
+      { k: "step", t: "Write RUNBOOK.md", d: "Five failure modes — auth error, rejected rows, audience count drop, dbt run failure, credit spike. For each: the first three things to check and who to tell." },
+      { k: "verify", t: "Alerts on all syncs including a row-error threshold, tested by causing a real failure" },
+      { k: "verify", t: "Sync results writing to Snowflake, with a query you've run against them" },
+      { k: "verify", t: "dbt observability connected" },
+      { k: "verify", t: "RUNBOOK.md in the repo covering five failure modes" }
+    ]
+  },
+  {
+    id: "p10", n: "10", title: "The portfolio artifact", hours: "2–3",
+    goal: "Something that outlasts the sandbox. The trial expires and the sandbox gets cleaned up — the repo and the writeup are the actual deliverable.",
+    items: [
+      { k: "step", t: "Publish the repo", d: "dbt project, Lambda, Terraform, exported Hightouch config, runbook, and a README that reads like a solution design: the problem, the schema decisions and why, the identity approach and its limits, the activation architecture, and what you'd do differently at ten million customers." },
+      { k: "step", t: "Write up the three decisions that required judgment", d: "Why the most permissive consent flag survives a merge and when you'd argue the opposite. Why churn risk is relative to each customer's own cadence. Why discount-dependent customers are excluded from the discount branch. Those are consulting arguments, not tool knowledge." },
+      { k: "step", t: "Scrub anything from the Apply workspace", d: "No screenshots showing other clients' sources, destinations or workspace members. Crop carefully, or rebuild the screenshots against your own data." },
+      { k: "step", t: "Record the eight-minute walkthrough", d: "Problem → warehouse model → schema as a marketer sees it → one audience built live → one journey traced for a single customer → the sync telemetry query. Practice the customer trace; it's the most convincing sixty seconds in the whole thing." },
+      { k: "verify", t: "Public repo with a README that stands on its own" },
+      { k: "verify", t: "A written piece on three judgment calls" },
+      { k: "verify", t: "Eight-minute walkthrough recorded" },
+      { k: "verify", t: "Nothing published showing another client's data or the Apply workspace internals" },
+      { k: "verify", t: "Snowflake trial resources dropped, or the account left to expire deliberately" }
+    ]
+  }
+];
+
+/* ---------------------------------------------------------------- state */
+const state = { checks: {}, env: {}, pred: {}, notes: {}, opts: {} };
+let db = null, usingLocal = false;
+const LS = "hightouch-capstone-v1";
+
+function readLocal() {
+  try {
+    const raw = localStorage.getItem(LS);
+    if (raw) Object.assign(state, JSON.parse(raw));
+  } catch (e) { /* private window, blocked storage */ }
+}
+function writeLocal() {
+  try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {}
+}
+
+const timers = {};
+function persist(kind) {
+  writeLocal();
+  if (!db) return;
+  clearTimeout(timers[kind]);
+  timers[kind] = setTimeout(async () => {
+    try {
+      await db.doc("state/" + kind).set({ v: state[kind] });
+      setSave(true, "Saved");
+    } catch (e) {
+      setSave(false, e && e.code === "invalid_argument" ? "Read-only — saved in this browser" : "Saved in this browser");
+    }
+  }, (kind === "checks" || kind === "opts") ? 120 : 700);
+}
+
+function setSave(ok, msg) {
+  const dot = document.getElementById("saveDot");
+  dot.className = "dot" + (ok ? "" : " local");
+  document.getElementById("saveMsg").textContent = msg;
+}
+
+/* ---------------------------------------------------------------- render */
+function codeBlock(lang, src) {
+  const id = "c" + Math.random().toString(36).slice(2, 9);
+  return '<div class="codewrap"><div class="codebar"><span>' + S(lang) +
+    '</span><button type="button" data-copy="' + id + '">Copy</button></div>' +
+    '<pre><code id="' + id + '">' + S(src) + '</code></pre></div>';
+}
+
+function tableBlock(head, rows) {
+  return '<div class="tablewrap"><table><thead><tr>' +
+    head.map(h => "<th>" + S(h) + "</th>").join("") + "</tr></thead><tbody>" +
+    rows.map(r => "<tr>" + r.map(c => "<td>" + S(c) + "</td>").join("") + "</tr>").join("") +
+    "</tbody></table></div>";
+}
+
+function predictBlock(phaseId) {
+  let h = '<div class="tablewrap"><table><thead><tr><th>Audience</th><th>Definition</th><th>Predicted</th><th>Actual</th><th>If you were off, why</th></tr></thead><tbody>';
+  AUDIENCES.forEach(a => {
+    h += "<tr><td><b>" + S(a.name) + "</b></td><td>" + S(a.def) + "</td>" +
+      '<td style="width:96px"><input type="text" id="pred-' + a.id + '-p" data-pred="' + a.id + '.p" inputmode="numeric" placeholder="—"></td>' +
+      '<td style="width:96px"><input type="text" id="pred-' + a.id + '-a" data-pred="' + a.id + '.a" inputmode="numeric" placeholder="—"></td>' +
+      '<td style="min-width:200px"><input type="text" id="pred-' + a.id + '-w" data-pred="' + a.id + '.w" placeholder="…"></td></tr>';
+  });
+  return h + "</tbody></table></div>";
+}
+
+function render() {
+  // env fields
+  document.getElementById("envGrid").innerHTML = ENV_FIELDS.map(f =>
+    '<label class="field" for="env-' + f.id + '"><span>' + S(f.label) + '</span>' +
+    '<input type="text" id="env-' + f.id + '" data-env="' + f.id + '" placeholder="' + S(f.ph) + '"></label>'
+  ).join("");
+
+  // phases
+  let stepN = 0;
+  document.getElementById("phases").innerHTML = PHASES.map(ph => {
+    let h = '<section class="phase' + (ph.optional ? " optional" : "") + '" id="' + ph.id + '"><div class="phase-head">' +
+      '<span class="phase-num">Phase ' + ph.n + '</span><h2>' + S(ph.title) + "</h2>" +
+      (ph.optional
+        ? '<label class="opt-toggle" data-opt-label="' + ph.id + '" for="opt-' + ph.id + '">' +
+          '<input type="checkbox" id="opt-' + ph.id + '" data-opt="' + ph.id + '">Add to plan</label>'
+        : "") +
+      '<span class="phase-count" data-count="' + ph.id + '"></span></div>' +
+      '<p class="goal">' + S(ph.goal) + " <span style=\"white-space:nowrap\">· " + S(ph.hours) + " hrs</span></p>" +
+      '<p class="course' + (COURSE[ph.id].indexOf("Prerequisite") === 0 ? " pre" : "") + '">' +
+      (COURSE[ph.id].indexOf("Prerequisite") === 0 ? "" : "Practices: ") + S(COURSE[ph.id]) + "</p>";
+
+    let inVerify = false;
+    ph.items.forEach((it, i) => {
+      if (it.k === "verify" && !inVerify) { h += '<div class="subhead">Done when</div>'; inVerify = true; }
+      if (it.k === "step" || it.k === "verify") {
+        stepN++;
+        const cid = ph.id + "-" + i;
+        h += '<div class="check"><input type="checkbox" id="chk-' + cid + '" data-check="' + cid + '">' +
+          '<span class="ct"><label for="chk-' + cid + '">' + S(it.t) + "</label>" +
+          (it.d ? "<em>" + S(it.d) + "</em>" : "") + "</span></div>";
+        if (it.code) h += codeBlock(it.code.lang, it.code.src);
+      } else if (it.k === "note") {
+        h += '<div class="callout">' + S(it.t) + "</div>";
+      } else if (it.k === "table") {
+        h += tableBlock(it.head, it.rows);
+      } else if (it.k === "predict") {
+        stepN++;
+        const cid = ph.id + "-" + i;
+        h += '<div class="check"><input type="checkbox" id="chk-' + cid + '" data-check="' + cid + '">' +
+          '<span class="ct"><label for="chk-' + cid + '">' + S(it.t) + "</label></span></div>" + predictBlock(ph.id);
+      }
+    });
+
+    h += '<div class="block"><label class="notes-label" for="note-' + ph.id + '">Notes &amp; blockers</label>' +
+      '<textarea id="note-' + ph.id + '" data-note="' + ph.id + '" placeholder="What broke, what fixed it, what you\'d do differently."></textarea></div>';
+    return h + "</section>";
+  }).join("");
+
+  // rail
+  document.getElementById("rail").innerHTML = PHASES.map(ph =>
+    '<li><a href="#' + ph.id + '" data-rail="' + ph.id + '"><span class="rl-n">' + ph.n +
+    '</span><span class="rl-t">' + S(ph.title) +
+    (ph.optional ? ' <span class="rl-opt">OPT</span>' : "") +
+    '</span><span class="rl-meter"><i data-rm="' + ph.id + '"></i></span></a></li>'
+  ).join("");
+}
+
+function applyState() {
+  document.querySelectorAll("[data-check]").forEach(el => { el.checked = !!state.checks[el.dataset.check]; });
+  document.querySelectorAll("[data-opt]").forEach(el => { el.checked = !!state.opts[el.dataset.opt]; });
+  document.querySelectorAll("[data-env]").forEach(el => { el.value = state.env[el.dataset.env] || ""; });
+  document.querySelectorAll("[data-note]").forEach(el => { el.value = state.notes[el.dataset.note] || ""; });
+  document.querySelectorAll("[data-pred]").forEach(el => {
+    const [row, col] = el.dataset.pred.split(".");
+    el.value = (state.pred[row] && state.pred[row][col]) || "";
+  });
+  updateMeters();
+}
+
+function updateMeters() {
+  let total = 0, done = 0, clear = 0, counted = 0;
+  PHASES.forEach(ph => {
+    const els = document.querySelectorAll('[data-check^="' + ph.id + '-"]');
+    let t = 0, d = 0;
+    els.forEach(el => { t++; if (el.checked) d++; });
+
+    const included = !ph.optional || !!state.opts[ph.id];
+    if (included) { total += t; done += d; counted++; if (t && t === d) clear++; }
+
+    const sec = document.getElementById(ph.id);
+    if (sec && ph.optional) sec.classList.toggle("included", included);
+    const lab = document.querySelector('[data-opt-label="' + ph.id + '"]');
+    if (lab) lab.classList.toggle("on", included);
+
+    const c = document.querySelector('[data-count="' + ph.id + '"]');
+    if (c) {
+      c.textContent = (included ? "" : "not counted · ") + d + "/" + t;
+      c.classList.toggle("complete", included && t === d);
+    }
+    const m = document.querySelector('[data-rm="' + ph.id + '"]');
+    if (m) m.style.width = (t ? (d / t) * 100 : 0) + "%";
+  });
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  document.getElementById("pctDone").textContent = pct;
+  document.getElementById("barAll").style.width = pct + "%";
+  document.getElementById("countAll").textContent = done + " of " + total + " steps";
+  document.getElementById("phasesDone").textContent = clear + " of " + counted + " phases clear";
+}
+
+/* ---------------------------------------------------------------- events */
+function wire() {
+  document.addEventListener("change", (e) => {
+    const el = e.target;
+    if (el.dataset && el.dataset.check !== undefined) {
+      if (el.checked) state.checks[el.dataset.check] = true; else delete state.checks[el.dataset.check];
+      updateMeters();
+      persist("checks");
+    } else if (el.dataset && el.dataset.opt !== undefined) {
+      if (el.checked) state.opts[el.dataset.opt] = true; else delete state.opts[el.dataset.opt];
+      updateMeters();
+      persist("opts");
+    }
+  });
+
+  document.addEventListener("input", (e) => {
+    const el = e.target;
+    if (!el.dataset) return;
+    if (el.dataset.env !== undefined) { state.env[el.dataset.env] = el.value; persist("env"); }
+    else if (el.dataset.note !== undefined) { state.notes[el.dataset.note] = el.value; persist("notes"); }
+    else if (el.dataset.pred !== undefined) {
+      const [row, col] = el.dataset.pred.split(".");
+      state.pred[row] = state.pred[row] || {};
+      state.pred[row][col] = el.value;
+      persist("pred");
+    }
+  });
+
+  document.addEventListener("click", async (e) => {
+    const btn = e.target.closest("[data-copy]");
+    if (!btn) return;
+    const src = document.getElementById(btn.dataset.copy);
+    if (!src) return;
+    const text = src.textContent;
+    try { await navigator.clipboard.writeText(text); }
+    catch (err) {
+      const ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); } catch (e2) {}
+      ta.remove();
+    }
+    btn.textContent = "Copied";
+    setTimeout(() => { btn.textContent = "Copy"; }, 1400);
+  });
+
+  // rail highlight
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(en => {
+      if (!en.isIntersecting) return;
+      document.querySelectorAll("[data-rail]").forEach(a => a.classList.remove("on"));
+      const a = document.querySelector('[data-rail="' + en.target.id + '"]');
+      if (a) a.classList.add("on");
+    });
+  }, { rootMargin: "-10% 0px -70% 0px" });
+  document.querySelectorAll(".phase").forEach(s => obs.observe(s));
+}
+
+/* ---------------------------------------------------------------- boot */
+readLocal();
+render();
+applyState();
+wire();
+setSave(false, "Saved in this browser");
+
+(async () => {
+  const c = window.claude;
+  if (!c || !c.use) { usingLocal = true; return; }
+  let store = null;
+  try { store = await c.use("db"); } catch (e) { store = null; }
+  if (!store) { usingLocal = true; setSave(false, "Saved in this browser"); return; }
+  db = store;
+  const kinds = ["checks", "env", "pred", "notes", "opts"];
+  try {
+    const snaps = await Promise.all(kinds.map(k => db.doc("state/" + k).get()));
+    let any = false;
+    snaps.forEach((s, i) => {
+      if (s.exists) {
+        const v = s.data().v;
+        if (v && typeof v === "object") { state[kinds[i]] = v; any = true; }
+      }
+    });
+    if (any) { applyState(); writeLocal(); }
+    setSave(true, "Synced");
+  } catch (e) {
+    setSave(false, "Saved in this browser");
+  }
+})();
+</script>

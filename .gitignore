@@ -1,0 +1,25 @@
+# never commit keys
+*.p8
+*.pem
+*.key
+.env
+.env.*
+profiles.yml
+
+# dbt
+target/
+dbt_packages/
+logs/
+
+# terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+
+# python
+__pycache__/
+*.pyc
+
+# os
+.DS_Store

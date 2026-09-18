@@ -1,0 +1,16 @@
+# Phase 2 — copy to ~/.dbt/profiles.yml and fill in your account.
+# Keep dbt and Hightouch on separate Snowflake users: dbt writes, Hightouch reads.
+
+solstice_cdp:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: ORGNAME-ACCOUNTNAME
+      user: SOLSTICE_DBT      # your own user, not the Hightouch service account
+      private_key_path: ~/.ssh/solstice_dbt_key.p8
+      role: ACCOUNTADMIN
+      database: SOLSTICE
+      warehouse: SOLSTICE_WH
+      schema: ANALYTICS
+      threads: 4
